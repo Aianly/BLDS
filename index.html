@@ -409,7 +409,7 @@ function vibe(ms){if(VIBE&&navigator.vibrate){try{navigator.vibrate(ms);}catch(e
 /* ============ 七、游戏状态 ============ */
 const MAX_ROUNDS=80;
 const G={running:false,lv:1,round:0,lives:5,hits:0,misses:0,timeouts:0,shots:0,combo:0,bestCombo:0,score:0,
-  RTs:[],colorHits:[],cheatDetected:false,cards:[],targetPos:0,targetRole:0,t0:0,timer:null,swishT:null,winRAF:0,lockUntil:0,answered:false,alerted:false};
+  RTs:[],colorHits:[],cheatDetected:false,cards:[],targetPos:0,targetRole:0,t0:0,timer:null,swapT:null,winRAF:0,lockUntil:0,answered:false,alerted:false};
 function curLv(){return levelOf(G.lv);}
 
 /* —— 每轮：洗角色 + 随机配色 —— */
@@ -430,13 +430,18 @@ function startRound(){
   G.cards=roles.map((role,i)=>({role,color:colIdx[i]}));
   renderCmd(); renderOptions();
   G.t0=performance.now(); G.lockUntil=G.t0;
-  clearTimeout(G.timer); clearInterval(G.swishT);
-  // 脸谱跳转：简单难度慢、难度越大越快；只变颜色，不变身份与位置
+  clearTimeout(G.timer); clearTimeout(G.swapT);
+  // 变脸：每次统一 10 秒；玩家点击判题后自动重置刷新为 10 秒
   G.cheatDetected=colorCheatDetected(); // 仅用于结算提示，不影响跳转间隔
-  G.swishT=setInterval(swapColors, JUMP_FIXED); // 每次变脸统一 10 秒
+  scheduleSwap();
   // 进度条
   winFillStart(L.win);
   G.timer=setTimeout(onTimeout, L.win);
+}
+// 变脸调度：10 秒后变脸一次，并继续排下轮；点击判题后会重新排成 10 秒
+function scheduleSwap(){
+  clearTimeout(G.swapT);
+  G.swapT=setTimeout(function(){ swapColors(); scheduleSwap(); }, JUMP_FIXED);
 }
 function swapColors(){ // 仅换色
   if(!G.running||G.answered)return;
@@ -527,7 +532,8 @@ function onPick(e){
   else{ judgeMiss(i,rt,win,card); }
 }
 function judgeHit(i,rt,win,card){
-  G.answered=true; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT); clearTimeout(G.timer);
+  G.answered=true; cancelAnimationFrame(G.winRAF); clearTimeout(G.swapT); clearTimeout(G.timer);
+  scheduleSwap(); // 点击判题后：变脸计时重置刷新为 10 秒
   G.shots++; G.RTs.push(rt); G.hits++; G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo;
   const speed=Math.max(0,Math.min(1,(win-rt)/win));
   const gain=Math.round(100*curLv().mult*(0.3*speed+0.7)+G.combo*6);
@@ -541,7 +547,8 @@ function judgeHit(i,rt,win,card){
   setTimeout(nextAfter,460);
 }
 function judgeMiss(i,rt,win,card){
-  G.answered=true; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT); clearTimeout(G.timer);
+  G.answered=true; cancelAnimationFrame(G.winRAF); clearTimeout(G.swapT); clearTimeout(G.timer);
+  scheduleSwap(); // 点击判题后：变脸计时重置刷新为 10 秒
   G.shots++; G.misses++; G.combo=0; G.lives--;
   if(SFX)sfxThud(); vibe(40);
   card.classList.add('wrong');
@@ -551,7 +558,7 @@ function judgeMiss(i,rt,win,card){
 }
 function onTimeout(){
   if(!G.running||G.answered)return;
-  G.answered=true; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT);
+  G.answered=true; cancelAnimationFrame(G.winRAF); clearTimeout(G.swapT);
   G.shots++; G.timeouts++; G.combo=0; G.lives--;
   if(SFX)sfxThud(); vibe(60);
   lockCards(true); showFeedback(false,null,curLv().win);
@@ -571,7 +578,7 @@ function startGame(lv){
 }
 function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function gameOver(){
-  G.running=false; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT); clearTimeout(G.timer);
+  G.running=false; cancelAnimationFrame(G.winRAF); clearTimeout(G.swapT); clearTimeout(G.timer);
   const n=Math.max(1,G.shots), acc=Math.round(G.hits/n*100);
   const avgRT=G.RTs.length?Math.round(G.RTs.reduce((a,b)=>a+b)/G.RTs.length):0;
   const sorted=[...G.RTs].sort((a,b)=>a-b);
