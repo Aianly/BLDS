@@ -3,14 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>变脸大师 · 川剧变脸</title>
+<title>变脸大师 · 川剧变脸（反应力训练 v2）</title>
 <style>
 :root{
-  --gold:#e8c46a;
-  --gold-2:#f7e3ac;
-  --red:#c0392b;
-  --paper:#f2e6cf;
-  --ink:#0a0404;
+  --gold:#e8c46a; --gold-2:#f7e3ac; --red:#c0392b; --red-2:#7a1f18;
+  --paper:#f2e6cf; --ink:#0a0404; --line:rgba(232,196,106,.18);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;margin:0;padding:0;}
@@ -18,1085 +15,670 @@ body{
   background:radial-gradient(120% 90% at 50% 8%, #4a160c 0%, #240906 38%, #0a0404 100%);
   color:var(--paper);
   font-family:"Noto Serif SC","Source Han Serif SC","Songti SC",STSong,"SimSun",serif;
-  overflow:hidden;
-  user-select:none;-webkit-user-select:none;
-  touch-action:manipulation;
+  overflow:hidden; user-select:none;-webkit-user-select:none; touch-action:manipulation;
 }
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;opacity:.55;z-index:1;
-  background-image:radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
-  background-size:3px 3px;
-}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.55;z-index:1;
+  background-image:radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);background-size:3px 3px;}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:5;}
+.shell{position:relative;z-index:2;width:min(100vw,460px);height:100vh;margin:0 auto;}
+@supports (height:100dvh){.shell{height:100dvh;}}
+.game{height:100%;padding:10px 14px 14px;display:flex;flex-direction:column;}
 
-.game{
-  position:relative;z-index:2;
-  width:min(100vw,460px);height:100vh;margin:0 auto;
-  padding:14px 20px 20px;
-  display:flex;flex-direction:column;
-}
-@supports (height:100dvh){.game{height:100dvh;}}
+/* 通用面板 */
+.panel{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:26px 20px;text-align:center;background:rgba(6,2,2,.93);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity .3s;overflow-y:auto;}
+.panel.show{opacity:1;pointer-events:auto;}
+.title{font-size:clamp(32px,9.6vw,46px);font-weight:900;letter-spacing:.12em;text-indent:.12em;margin:0;
+  background:linear-gradient(180deg,#fff4d2,#e8c46a 48%,#b3853a);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 4px 18px rgba(232,196,106,.35));}
+.subtitle{margin-top:8px;font-size:11px;letter-spacing:.4em;text-indent:.4em;color:rgba(232,196,106,.6);}
+.divider{width:120px;height:1px;margin:16px auto;background:linear-gradient(90deg,transparent,rgba(232,196,106,.55),transparent);position:relative;}
+.divider::after{content:'❖';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:rgba(232,196,106,.7);font-size:11px;background:#0d0504;padding:0 6px;}
+.btn-start{margin-top:16px;padding:13px 44px;border-radius:40px;border:1px solid rgba(232,196,106,.6);
+  background:linear-gradient(180deg,rgba(192,57,43,.55),rgba(120,30,22,.6));color:#fff3d4;font-family:inherit;
+  font-size:15px;font-weight:700;letter-spacing:.26em;text-indent:.26em;cursor:pointer;
+  box-shadow:0 0 28px rgba(192,57,43,.4),inset 0 1px 0 rgba(255,255,255,.16);transition:transform .1s,box-shadow .25s;}
+.btn-start:active{transform:scale(.96);}
+.btn-ghost{margin-top:10px;padding:10px 20px;border-radius:24px;border:1px solid rgba(232,196,106,.35);
+  background:transparent;color:rgba(232,196,106,.85);font-family:inherit;font-size:12px;letter-spacing:.2em;text-indent:.2em;cursor:pointer;}
 
-/* ---------- HUD ---------- */
-.hud{
-  display:flex;gap:8px;justify-content:space-between;align-items:center;
-  padding:9px 14px;border:1px solid rgba(232,196,106,.18);border-radius:12px;
-  background:linear-gradient(180deg,rgba(232,196,106,.07),rgba(232,196,106,.015));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
-}
-.hud-item{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;overflow:hidden;cursor:default;}
-.hud-item.click{cursor:pointer;}
-.hud-label{font-size:10px;letter-spacing:.3em;text-indent:.3em;color:rgba(232,196,106,.5);white-space:nowrap;}
-.hud b{font-size:20px;line-height:1.15;color:var(--gold-2);font-weight:700;font-variant-numeric:tabular-nums;}
+/* 首页 */
+.home-stats{display:flex;gap:9px;width:min(100%,360px);margin-top:2px;}
+.hstat{flex:1;padding:10px 6px;border-radius:12px;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(232,196,106,.07),rgba(232,196,106,.015));}
+.hstat span{display:block;font-size:9px;letter-spacing:.2em;color:rgba(232,196,106,.5);}
+.hstat b{font-size:19px;color:var(--gold-2);font-variant-numeric:tabular-nums;}
+.hstat small{font-size:10px;color:rgba(242,230,207,.5);}
+.lvl-list{width:min(100%,372px);margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.lvl-card{position:relative;display:flex;align-items:center;padding:10px 13px;border-radius:13px;cursor:pointer;
+  border:1px solid var(--line);background:linear-gradient(180deg,rgba(232,196,106,.06),rgba(232,196,106,.012));
+  transition:border-color .2s,background .2s,transform .08s;overflow:hidden;}
+.lvl-card:active{transform:scale(.99);}
+.lvl-card.cur{border-color:rgba(232,196,106,.65);box-shadow:0 0 0 1px rgba(232,196,106,.38),inset 0 0 26px rgba(232,196,106,.06);}
+.lvl-num{width:36px;height:36px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#c0392b,#6e1a12);color:#ffe9b0;font-weight:900;font-size:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);}
+.lvl-info{flex:1;margin-left:12px;min-width:0;}
+.lvl-info .nm{display:flex;align-items:baseline;gap:8px;font-weight:800;font-size:16px;color:var(--gold-2);letter-spacing:.05em;}
+.lvl-info .nm b{color:#fff3d4;}
+.lvl-info .meta{font-size:10px;color:rgba(242,230,207,.55);margin-top:2px;letter-spacing:.04em;}
+.lvl-info .meta i{font-style:normal;color:rgba(232,196,106,.8);}
+.lvl-best{margin-left:10px;text-align:right;flex:none;}
+.lvl-best span{display:block;font-size:9px;color:rgba(242,230,207,.45);letter-spacing:.12em;}
+.lvl-best b{font-size:14px;color:var(--gold-2);font-variant-numeric:tabular-nums;}
+.rec-tag{position:absolute;top:-1px;right:-1px;padding:3px 8px;border-radius:0 12px 0 10px;font-size:10px;font-weight:800;
+  color:#3a160a;background:linear-gradient(180deg,#ffe9a0,#e8c46a);letter-spacing:.12em;box-shadow:-2px 2px 8px rgba(0,0,0,.3);z-index:2;}
+
+/* 顶部行 */
+.toprow{display:flex;align-items:center;gap:8px;}
+.icon-btn{width:34px;height:34px;flex:none;border-radius:10px;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(232,196,106,.08),rgba(232,196,106,.02));color:var(--gold-2);
+  font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.icon-btn:active{transform:scale(.92);}
+.diff-btn{flex:none;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--line);cursor:pointer;
+  display:flex;align-items:center;gap:6px;font-family:inherit;font-size:12px;font-weight:700;color:var(--gold-2);
+  background:linear-gradient(180deg,rgba(232,196,106,.1),rgba(232,196,106,.03));}
+.diff-btn:active{transform:scale(.95);}
+.hud{flex:1;display:flex;gap:6px;align-items:stretch;padding:8px 10px;border:1px solid var(--line);border-radius:12px;
+  background:linear-gradient(180deg,rgba(232,196,106,.07),rgba(232,196,106,.015));}
+.hud-item{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;overflow:hidden;}
+.hud-label{font-size:8px;letter-spacing:.22em;text-indent:.22em;color:rgba(232,196,106,.5);white-space:nowrap;}
+.hud b{font-size:17px;line-height:1.15;color:var(--gold-2);font-weight:700;font-variant-numeric:tabular-nums;}
 .hud b.bump{animation:bump .25s ease-out;}
-@keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.28);color:#fff}100%{transform:scale(1)}}
-#lives{font-size:12px;letter-spacing:.14em;line-height:1.5;}
-#lives i{font-style:normal;color:rgba(232,196,106,.14);transition:color .2s,text-shadow .2s;}
-#lives i.on{color:var(--gold);text-shadow:0 0 9px rgba(232,196,106,.75);}
-#diffBadge{font-size:16px;line-height:1.2;color:var(--gold-2);font-weight:700;letter-spacing:.02em;}
+@keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.3);color:#fff}100%{transform:scale(1)}}
+.lvltag{font-size:11px;line-height:1.2;color:var(--gold-2);font-weight:800;}
+#lives{color:#ff7b7b !important;font-size:15px;letter-spacing:.06em;text-shadow:0 0 10px rgba(255,90,90,.5);}
 
-/* ---------- 戏令 ---------- */
-.cmd{margin-top:16px;text-align:center;}
-.cmd-label{font-size:10px;letter-spacing:.65em;text-indent:.65em;color:rgba(232,196,106,.45);}
-.cmd-main{
-  margin-top:5px;display:flex;align-items:center;justify-content:center;gap:14px;
-  font-size:clamp(26px,7.6vw,38px);font-weight:800;letter-spacing:.1em;
-  transition:color .18s;
-}
-.cmd-dot{
-  width:16px;height:16px;border-radius:50%;flex:none;
-  box-shadow:0 0 18px 2px currentColor, inset 0 0 0 2px rgba(255,255,255,.55);
-  background:currentColor;
-}
-.cmd-main.pop{animation:cmdPop .3s ease-out;}
-@keyframes cmdPop{0%{transform:scale(.86);opacity:.4}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+/* 窗口倒计时 */
+.winbar-wrap{margin-top:8px;height:32px;border-radius:9px;padding:6px 10px;border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(232,196,106,.04),rgba(232,196,106,.01));display:flex;align-items:center;gap:9px;}
+.winbar-track{flex:1;height:8px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;}
+.winbar-fill{height:100%;width:100%;border-radius:6px;background:linear-gradient(90deg,#c0392b,#e8c46a);transition:none;}
+.winbar-fill.danger{background:linear-gradient(90deg,#ff4d3d,#e83a2a);box-shadow:0 0 14px rgba(255,60,40,.9);animation:pulse .5s infinite;}
+@keyframes pulse{50%{filter:brightness(1.5)}}
+.win-label{font-size:11px;color:rgba(242,230,207,.7);white-space:nowrap;font-variant-numeric:tabular-nums;width:92px;text-align:right;}
+.win-label.warn{color:#ff6b5e;font-weight:800;}
 
-/* ---------- 脸谱 ---------- */
-.stage-face{
-  flex:1;min-height:0;position:relative;
-  display:flex;align-items:center;justify-content:center;
-  margin:4px 0 2px;
-}
-.stage-face::before{
-  content:'';position:absolute;width:min(72vw,280px);aspect-ratio:1;border-radius:50%;
-  background:radial-gradient(circle,rgba(232,196,106,.18) 0%,rgba(192,57,43,.12) 42%,transparent 68%);
-  filter:blur(8px);
-}
-.ring{
-  position:absolute;width:min(76vw,300px);aspect-ratio:1;border-radius:50%;
-  border:1px dashed rgba(232,196,106,.26);
-  animation:spin 30s linear infinite;
-}
-.ring::after{
-  content:'';position:absolute;inset:11px;border-radius:50%;
-  border:1px solid rgba(232,196,106,.1);
-}
-.ring::before{
-  content:'';position:absolute;inset:-3px;border-radius:50%;
-  border-top:2px solid rgba(232,196,106,.5);
-  border-left:2px solid transparent;border-right:2px solid transparent;border-bottom:2px solid transparent;
-  animation:spin 6s linear infinite reverse;
-}
+/* 戏令 */
+.cmd{margin-top:9px;text-align:center;}
+.cmd-label{font-size:9px;letter-spacing:.6em;text-indent:.6em;color:rgba(232,196,106,.45);}
+.cmd-main{margin-top:4px;display:flex;align-items:center;justify-content:center;gap:12px;transition:color .18s;}
+.cmd-ico{width:34px;height:34px;flex:none;}
+.cmd-ico svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));}
+.cmd-name{font-size:clamp(20px,6.4vw,30px);font-weight:800;letter-spacing:.1em;color:var(--gold-2);}
+.cmd-name small{font-size:12px;color:rgba(242,230,207,.55);letter-spacing:.08em;font-weight:400;margin-left:4px;}
+.cmd-main.pop{animation:cmdPop .28s ease-out;}
+@keyframes cmdPop{0%{transform:scale(.86);opacity:.4}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+
+/* 脸谱区 */
+.stage-face{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:3px 0;gap:8px;}
+.stage-face::before{content:'';position:absolute;width:min(70vw,250px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,196,106,.14),rgba(192,57,43,.1) 42%,transparent 68%);filter:blur(8px);}
+.ring{position:absolute;width:min(78vw,290px);aspect-ratio:1;border-radius:50%;border:1px dashed rgba(232,196,106,.22);animation:spin 32s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+.grid-options{position:relative;z-index:2;width:min(90vw,332px);display:grid;gap:11px;}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g6{grid-template-columns:repeat(3,1fr);}
+.g8{grid-template-columns:repeat(4,1fr);}
+.g10{grid-template-columns:repeat(5,1fr);}
+.opt-card{position:relative;aspect-ratio:5/6;border-radius:13px;cursor:pointer;overflow:hidden;
+  background:rgba(255,255,255,.03);border:1px solid var(--line);
+  box-shadow:0 9px 20px rgba(0,0,0,.35);transition:transform .07s ease,border-color .15s,box-shadow .15s;}
+.opt-card svg{width:100%;height:100%;display:block;filter:drop-shadow(0 7px 13px rgba(0,0,0,.5));}
+.opt-card:active{transform:scale(.92);}
+.opt-card.locked{pointer-events:none;opacity:.55;}
+.opt-card.hit{animation:faceHit .32s ease-out;border-color:var(--gold-2);box-shadow:0 0 26px rgba(232,196,106,.8);}
+.opt-card.wrong{animation:shake .4s;border-color:#ff4d3d;box-shadow:0 0 22px rgba(255,60,40,.7);}
+.opt-card.target{animation:faceHit .5s;border-color:#7ef0a0;box-shadow:0 0 26px rgba(90,240,140,.75);z-index:3;}
+.opt-card.swap svg{animation:swapCol .35s;}
+@keyframes swapCol{0%{filter:brightness(1.6) drop-shadow(0 7px 13px rgba(0,0,0,.5))}100%{filter:none drop-shadow(0 7px 13px rgba(0,0,0,.5))}}
+.opt-tag{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);font-size:11px;font-weight:800;letter-spacing:.05em;line-height:1;
+  padding:3px 8px;border-radius:20px;background:rgba(6,2,2,.74);color:#fbe7c0;border:1px solid rgba(255,255,255,.22);pointer-events:none;white-space:nowrap;}
+body.colorblind .opt-tag{font-size:13px;font-weight:900;border-width:2px;background:rgba(0,0,0,.88);}
+body.colorblind .opt-card{border-width:2px;border-color:var(--cb)} 
 
-.face{
-  position:relative;z-index:2;
-  width:min(58vw,228px);aspect-ratio:5/6;
-}
-.face svg{width:100%;height:100%;display:block;filter:drop-shadow(0 14px 26px rgba(0,0,0,.65));}
-.face.pop{animation:facePop .24s cubic-bezier(.34,1.4,.5,1);}
-@keyframes facePop{
-  0%{transform:scale(.84) rotate(-4deg);filter:blur(2.5px);opacity:.3}
-  55%{transform:scale(1.05) rotate(1.5deg);filter:blur(0)}
-  100%{transform:scale(1) rotate(0);opacity:1}
-}
-.face.hit{animation:faceHit .3s ease-out;}
-@keyframes faceHit{
-  0%{transform:scale(1)}
-  35%{transform:scale(1.12);filter:brightness(1.5) drop-shadow(0 0 24px rgba(232,196,106,.9))}
-  100%{transform:scale(1);filter:none}
-}
+@keyframes faceHit{0%{transform:scale(1)}35%{transform:scale(1.16);filter:brightness(1.5)}100%{transform:scale(1)}}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
 
-/* ---------- 倒计时环 ---------- */
-.count-wrap{
-  position:absolute;z-index:3;left:50%;bottom:2px;transform:translateX(-50%);
-  width:min(46vw,168px);opacity:.9;
-}
-.count-wrap .ring-bg{fill:none;stroke:rgba(232,196,106,.13);stroke-width:6;}
-.count-wrap .ring-fg{
-  fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;
-  stroke-dasharray:264;stroke-dashoffset:0;
-  transform:rotate(-90deg);transform-origin:center;
-  transition:stroke .18s, filter .18s;
-}
-.count-wrap.red .ring-fg{stroke:#d64541;filter:drop-shadow(0 0 7px rgba(214,69,65,.95));}
-.count-wrap .count-num{
-  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font-size:11px;letter-spacing:.12em;color:rgba(242,230,207,.5);
-  font-variant-numeric:tabular-nums;
-}
-.count-wrap.red .count-num{color:rgba(255,190,185,.85);}
-
-/* ---------- 浮动分 ---------- */
-.float{
-  position:fixed;z-index:7;pointer-events:none;font-weight:800;font-size:26px;
-  color:var(--gold-2);opacity:0;text-shadow:0 0 18px rgba(232,196,106,.9);
-  transform:translate(-50%,-50%);
-}
-.float.go{animation:floatUp .9s ease-out forwards;}
-@keyframes floatUp{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}
-  18%{opacity:1;transform:translate(-50%,-56%) scale(1.18)}
-  100%{opacity:0;transform:translate(-50%,-135%) scale(1)}
-}
-
-/* ---------- 按钮 ---------- */
-.btn-liang{
-  position:relative;margin-top:10px;width:100%;height:74px;
-  border:1px solid rgba(232,196,106,.42);border-radius:14px;
-  background:linear-gradient(180deg,rgba(232,196,106,.15),rgba(192,57,43,.2));
-  color:var(--gold-2);font-family:inherit;font-size:25px;font-weight:800;
-  letter-spacing:.44em;text-indent:.44em;cursor:pointer;
-  transition:transform .07s ease, box-shadow .25s ease, opacity .2s;
-  box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
-}
-.btn-liang small{
-  display:block;font-size:10px;letter-spacing:.18em;text-indent:.18em;
-  color:rgba(232,196,106,.48);font-weight:400;margin-top:3px;
-}
-.btn-liang:active{transform:scale(.975);box-shadow:0 0 30px rgba(232,196,106,.4);}
-.btn-liang:disabled{opacity:.3;cursor:default;}
-
-.ctrl{display:flex;gap:8px;margin-bottom:10px;}
-.ctrl.hide{display:none;}
-.ctrl.veiled{opacity:.35;pointer-events:none;}
-.ctrl button{
-  flex:1;padding:10px 0;border:1px solid rgba(232,196,106,.3);border-radius:10px;
-  background:linear-gradient(180deg,rgba(232,196,106,.08),rgba(192,57,43,.05));
-  color:var(--gold-2);font-family:inherit;font-size:13px;letter-spacing:.08em;cursor:pointer;
-  transition:transform .08s, background .2s;
-}
-.ctrl button:active{transform:scale(.95);background:rgba(232,196,106,.14);}
-
-#levelPanel .lp-key{font-size:clamp(32px,10vw,48px);font-weight:900;line-height:1;color:var(--gold-2);text-shadow:0 0 24px rgba(232,196,106,.4);}
-#levelPanel .lp-name{font-size:22px;font-weight:800;letter-spacing:.22em;text-indent:.22em;color:#fff;margin-top:10px;}
-#levelPanel .lp-meta{margin-top:14px;font-size:14px;letter-spacing:.06em;color:rgba(242,230,207,.72);line-height:1.8;}
-#levelPanel .lp-meta b{color:var(--gold);}
-.pause-box{display:flex;flex-direction:column;align-items:stretch;gap:12px;width:min(100%,280px);margin-top:28px;}
-.pause-box .btn-start{margin-top:0;}
-
-/* ---------- 遮罩 ---------- */
-.overlay{
-  position:fixed;inset:0;z-index:10;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:34px 28px;text-align:center;
-  background:rgba(6,2,2,.84);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
-  opacity:0;pointer-events:none;transition:opacity .32s ease;
-  overflow:auto;
-}
-.overlay.show{opacity:1;pointer-events:auto;}
-
-.title{
-  font-size:clamp(38px,11vw,52px);font-weight:900;letter-spacing:.14em;text-indent:.14em;
-  background:linear-gradient(180deg,#fff4d2 0%,#e8c46a 48%,#b3853a 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 4px 18px rgba(232,196,106,.35));
-  margin:0;
-}
-.subtitle{
-  margin-top:10px;font-size:12px;letter-spacing:.42em;text-indent:.42em;
-  color:rgba(232,196,106,.6);
-}
-.divider{
-  width:120px;height:1px;margin:24px auto;
-  background:linear-gradient(90deg,transparent,rgba(232,196,106,.55),transparent);
-  position:relative;
-}
-.divider::after{
-  content:'❖';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  color:rgba(232,196,106,.7);font-size:11px;background:#0d0504;padding:0 6px;
-}
-.rules{max-width:330px;text-align:left;font-size:13px;line-height:2;color:rgba(242,230,207,.72);}
-.rules p{margin:0 0 2px;display:flex;gap:9px;}
-.rules p span{color:var(--gold);flex:none;}
-.rules em{font-style:normal;color:var(--gold-2);}
-
-/* 难度选择 */
-.diff-title{width:100%;max-width:360px;text-align:left;font-size:12px;letter-spacing:.4em;text-indent:.4em;
-  color:rgba(232,196,106,.6);margin:8px auto 12px;border-left:2px solid rgba(232,196,106,.4);padding-left:10px;}
-.diff-sub{font-size:10px;letter-spacing:.1em;color:rgba(242,230,207,.4);margin-top:2px;}
-.diff-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(100%,360px);margin:0 auto;}
-.diff-card{
-  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  padding:14px 4px 12px;border:1px solid rgba(232,196,106,.25);border-radius:12px;
-  background:linear-gradient(180deg,rgba(232,196,106,.08),rgba(192,57,43,.06));
-  color:var(--paper);cursor:pointer;font-family:inherit;
-  transition:transform .08s ease, border-color .2s, box-shadow .2s;
-}
-.diff-card:active{transform:scale(.94);}
-.diff-card b{font-size:24px;font-weight:900;color:var(--gold-2);line-height:1;}
-.diff-card small{font-size:10px;letter-spacing:.14em;color:rgba(242,230,207,.6);}
-.diff-card .dmeta{font-size:9px;color:rgba(232,196,106,.5);letter-spacing:.02em;line-height:1.5;}
-.diff-card.sel{
-  border-color:var(--gold);box-shadow:0 0 18px rgba(232,196,106,.5), inset 0 0 12px rgba(232,196,106,.12);
-}
-.diff-card.sel b{color:#fff;}
-.diff-card .tag{
-  position:absolute;top:-7px;right:-6px;font-size:9px;line-height:1;letter-spacing:.06em;
-  background:linear-gradient(180deg,#ffb03a,#c0392b);color:#fff;padding:4px 7px;border-radius:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,.4);
-}
-.diff-hint{margin:12px auto 0;font-size:10px;letter-spacing:.14em;color:rgba(242,230,207,.38);}
-
-.btn-start{
-  margin-top:26px;padding:15px 52px;border-radius:40px;border:1px solid rgba(232,196,106,.6);
-  background:linear-gradient(180deg,rgba(192,57,43,.55),rgba(120,30,22,.6));
-  color:#fff3d4;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:.3em;text-indent:.3em;
-  cursor:pointer;box-shadow:0 0 28px rgba(192,57,43,.4), inset 0 1px 0 rgba(255,255,255,.16);
-  transition:transform .1s, box-shadow .25s;
-}
-.btn-start:active{transform:scale(.96);box-shadow:0 0 40px rgba(232,196,106,.5);}
-.hint{margin-top:14px;font-size:11px;letter-spacing:.2em;color:rgba(242,230,207,.32);}
+/* 反馈层 */
+.feedback{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);z-index:20;display:flex;flex-direction:column;align-items:center;gap:5px;
+  pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;padding:0 24px;}
+.feedback.show{opacity:1;}
+.fb-badge{font-size:clamp(25px,7.6vw,36px);font-weight:900;letter-spacing:.1em;text-shadow:0 4px 22px rgba(0,0,0,.6);}
+.fb-badge.ok{color:#7ef0a0;}.fb-badge.no{color:#ff6b5e;}
+.fb-rt{font-size:18px;font-weight:800;color:var(--gold-2);font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(232,196,106,.4);}
+.fb-rt small{font-size:12px;color:rgba(242,230,207,.6);font-weight:400;}
+.fb-tip{font-size:11px;color:rgba(242,230,207,.65);letter-spacing:.08em;}
 
 /* 结算 */
-.rank{font-size:clamp(26px,7.6vw,34px);font-weight:900;letter-spacing:.16em;text-indent:.16em;
-  background:linear-gradient(180deg,#fff4d2,#e8c46a 55%,#b3853a);
-  -webkit-background-clip:text;background-clip:text;color:transparent;margin:6px 0 0;}
-.rank-poem{font-size:12px;letter-spacing:.14em;color:rgba(232,196,106,.55);margin-top:10px;}
-.score-big{font-size:58px;font-weight:900;color:var(--gold-2);line-height:1.1;margin:6px 0 0;
-  text-shadow:0 0 34px rgba(232,196,106,.4);font-variant-numeric:tabular-nums;}
-.stats{display:flex;gap:0;margin-top:22px;border-top:1px solid rgba(232,196,106,.16);
-  border-bottom:1px solid rgba(232,196,106,.16);padding:14px 0;width:min(100%,330px);}
-.stat{flex:1;display:flex;flex-direction:column;gap:4px;}
-.stat + .stat{border-left:1px solid rgba(232,196,106,.12);}
-.stat span{font-size:10px;letter-spacing:.24em;text-indent:.24em;color:rgba(232,196,106,.45);}
-.stat b{font-size:19px;color:var(--paper);font-weight:700;font-variant-numeric:tabular-nums;}
-.best-tip{margin-top:16px;font-size:11px;letter-spacing:.16em;color:rgba(232,196,106,.6);height:14px;}
-.btn-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;justify-content:center;}
-.btn-row .btn-start{margin-top:0;}
-.btn-ghost{
-  padding:15px 30px;border-radius:40px;border:1px solid rgba(232,196,106,.35);
-  background:transparent;color:var(--gold-2);font-family:inherit;font-size:15px;font-weight:700;
-  letter-spacing:.18em;cursor:pointer;transition:transform .1s, background .2s;
-}
-.btn-ghost:active{transform:scale(.96);background:rgba(232,196,106,.1);}
+.rank{font-size:clamp(22px,6.8vw,30px);font-weight:900;letter-spacing:.16em;text-indent:.16em;
+  background:linear-gradient(180deg,#fff4d2,#e8c46a 55%,#b3853a);-webkit-background-clip:text;background-clip:text;color:transparent;margin:4px 0 0;}
+.rank-poem{font-size:11px;letter-spacing:.1em;color:rgba(232,196,106,.55);margin-top:6px;}
+.score-big{font-size:48px;font-weight:900;color:var(--gold-2);line-height:1.1;margin:4px 0 0;text-shadow:0 0 32px rgba(232,196,106,.4);font-variant-numeric:tabular-nums;}
+.stats6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:14px;width:min(100%,346px);
+  border-top:1px solid rgba(232,196,106,.16);border-bottom:1px solid rgba(232,196,106,.16);padding:11px 0;}
+.stats6 .stat{display:flex;flex-direction:column;gap:3px;}
+.stats6 .stat span{font-size:8px;letter-spacing:.1em;color:rgba(232,196,106,.45);}
+.stats6 .stat b{font-size:13px;color:var(--paper);font-weight:700;font-variant-numeric:tabular-nums;}
+.suggest{margin-top:11px;font-size:12px;color:#7ef0a0;letter-spacing:.06em;background:rgba(126,240,160,.08);
+  padding:8px 16px;border-radius:24px;border:1px dashed rgba(126,240,160,.35);}
+.suggest b{font-weight:900;color:#a5ffc0;}
+.suggest small{display:block;font-size:10px;color:rgba(242,230,207,.5);margin-top:2px;letter-spacing:.05em;}
 
-.shaking{animation:shake .42s cubic-bezier(.36,.07,.19,.97);}
-@keyframes shake{
-  10%,90%{transform:translateX(-3px)}
-  20%,80%{transform:translateX(4px)}
-  30%,50%,70%{transform:translateX(-7px)}
-  40%,60%{transform:translateX(7px)}
-}
-.flashbad{animation:flashbad .4s;}
-@keyframes flashbad{0%{box-shadow:inset 0 0 0 0 rgba(192,57,43,.7)}30%{box-shadow:inset 0 0 120px 30px rgba(192,57,43,.55)}100%{box-shadow:inset 0 0 0 0 rgba(192,57,43,0)}}
+/* 切换难度 */
+.switch-panel .title2{font-size:22px;font-weight:900;letter-spacing:.2em;color:var(--gold-2);margin:0;}
+.switch-list{width:min(100%,340px);display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.switch-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;border:1px solid var(--line);cursor:pointer;
+  background:linear-gradient(180deg,rgba(232,196,106,.06),rgba(232,196,106,.012));transition:border-color .15s,transform .08s;}
+.switch-item:active{transform:scale(.98);}
+.switch-item .nm{font-weight:800;font-size:14px;color:var(--gold-2);}
+.switch-item .meta{font-size:10px;color:rgba(242,230,207,.55);margin-left:auto;letter-spacing:.04em;}
+.switch-item.cur{border-color:rgba(232,196,106,.7);box-shadow:inset 0 0 22px rgba(232,196,106,.06);}
+
+/* 设置 */
+.set-wrap{width:min(100%,350px);display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:12px;
+  border:1px solid var(--line);background:linear-gradient(180deg,rgba(232,196,106,.06),rgba(232,196,106,.012));}
+.set-row .lbl{font-size:13px;color:var(--paper);font-weight:700;letter-spacing:.04em;}
+.set-row .lbl small{display:block;font-size:10px;color:rgba(232,196,106,.5);font-weight:400;margin-top:2px;letter-spacing:.06em;}
+.switch{position:relative;width:48px;height:27px;flex:none;cursor:pointer;}
+.switch input{opacity:0;width:0;height:0;}
+.switch .sl{position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,.14);transition:.2s;border:1px solid rgba(255,255,255,.18);}
+.switch .sl::after{content:'';position:absolute;left:3px;top:3px;width:19px;height:19px;border-radius:50%;background:#cbb98f;transition:.2s;}
+.switch input:checked + .sl{background:linear-gradient(90deg,#c0392b,#a53a22);}
+.switch input:checked + .sl::after{transform:translateX(21px);background:#ffe9b0;}
+
+.float{position:fixed;z-index:24;pointer-events:none;font-weight:800;font-size:22px;color:var(--gold-2);opacity:0;
+  text-shadow:0 0 18px rgba(232,196,106,.9);transform:translate(-50%,-50%);}
+.float.go{animation:floatUp .9s ease-out forwards;}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}18%{opacity:1;transform:translate(-50%,-56%) scale(1.18)}100%{opacity:0;transform:translate(-50%,-135%) scale(1)}}
+.hint{margin-top:10px;font-size:9px;letter-spacing:.16em;color:rgba(242,230,207,.3);}
 </style>
 </head>
 <body>
 <canvas id="fx"></canvas>
 
-<div class="game" id="game">
-  <div class="hud">
-    <div class="hud-item"><span class="hud-label">分数</span><b id="score">0</b></div>
-    <div class="hud-item"><span class="hud-label">连击</span><b id="combo">0</b></div>
-    <div class="hud-item"><span class="hud-label">命数</span><b id="lives"></b></div>
-    <div class="hud-item"><span class="hud-label">时限</span><b id="roundTime">10.0</b></div>
-    <div class="hud-item click" id="diffHud"><span class="hud-label">难度</span><b id="diffBadge">L1</b></div>
-  </div>
+<!-- 训练页 -->
+<div class="shell" id="gameShell" style="visibility:hidden">
+  <div class="game">
+    <div class="toprow">
+      <div class="hud">
+        <div class="hud-item"><span class="hud-label">等级</span><b class="lvltag" id="hudLv">L1 启蒙</b></div>
+        <div class="hud-item"><span class="hud-label">生命</span><b id="lives">♥♥♥♥♥</b></div>
+        <div class="hud-item"><span class="hud-label">连击</span><b id="combo">0</b></div>
+        <div class="hud-item"><span class="hud-label">正确</span><b id="hudAcc">0%</b></div>
+      </div>
+      <button class="icon-btn" id="btnSet" title="设置">⚙</button>
+      <button class="icon-btn" id="btnHome" title="首页">⌂</button>
+    </div>
+    <button class="diff-btn" id="btnDiff" style="margin-top:8px;width:100%;justify-content:center">🎭 切换难度 · <b id="diffCur">L1 启蒙</b></button>
 
-  <div class="cmd">
-    <div class="cmd-label">戏 令</div>
-    <div class="cmd-main" id="cmdMain">
-      <span class="cmd-dot" id="cmdDot"></span>
-      <span id="cmdText">—</span>
+    <div class="winbar-wrap">
+      <div class="winbar-track"><div class="winbar-fill" id="winFill"></div></div>
+      <div class="win-label" id="winLbl">窗口 11.5s</div>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">戏 令 · 众 中 寻 脸</div>
+      <div class="cmd-main" id="cmdMain">
+        <span class="cmd-ico" id="cmdIco"></span>
+        <span class="cmd-name" id="cmdName">关羽</span>
+      </div>
+      <div class="cmd-label" style="margin-top:3px;font-size:8px;color:rgba(242,230,207,.35)">认造型 · 颜色会换，别靠颜色</div>
+    </div>
+
+    <div class="stage-face">
+      <div class="ring"></div>
+      <div class="grid-options" id="options"></div>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <div class="fb-badge" id="fbBadge">正 中</div>
+      <div class="fb-rt" id="fbRt">860<small>ms</small></div>
+      <div class="fb-tip" id="fbTip"></div>
     </div>
   </div>
-
-  <div class="stage-face">
-    <div class="ring"></div>
-    <div class="face" id="face"></div>
-    <div class="count-wrap" id="countWrap">
-      <svg viewBox="0 0 100 100">
-        <circle class="ring-bg" cx="50" cy="50" r="42"/>
-        <circle class="ring-fg" id="countRing" cx="50" cy="50" r="42"/>
-      </svg>
-      <span class="count-num" id="countNum"></span>
-    </div>
-  </div>
-
-  <div class="ctrl hide" id="ctrl">
-    <button id="btnPause" type="button">⏸ 暂停</button>
-    <button id="btnStop" type="button">⏹ 中断</button>
-    <button id="btnHome" type="button">🏠 返回主页面</button>
-  </div>
-  <button class="btn-liang" id="liang" type="button" disabled>
-    亮 相
-    <small>空格 / 点击</small>
-  </button>
 </div>
 
-<div class="overlay show" id="startPanel">
+<!-- 首页 -->
+<div class="panel show" id="startPanel">
   <h1 class="title">变脸大师</h1>
-  <div class="subtitle">川 剧 绝 活 · 眼 疾 手 快</div>
+  <div class="subtitle">众 脸 之 间 · 眼 疾 手 快</div>
   <div class="divider"></div>
-  <div class="rules">
-    <p><span>壹</span>脸谱每变一张，颜色皆不同。</p>
-    <p><span>贰</span>看清上方<em>戏令</em>所指的颜色。</p>
-    <p><span>叁</span>目标出现的瞬间，按<em>亮相</em>定格。</p>
-    <p><span>肆</span>变错一张，折损一条命，共<em>五命</em>。</p>
+  <div class="home-stats">
+    <div class="hstat"><span>最佳反应</span><b id="bestRT">—</b><small>ms</small></div>
+    <div class="hstat"><span>今日训练</span><b id="todayCount">0</b><small>次</small></div>
+    <div class="hstat"><span>最高纪录</span><b id="bestScore">0</b><small>分</small></div>
   </div>
-  <div class="diff-title">二、选级开局 · 自主选择 · 全部开放
-    <span class="diff-sub">点击难度卡片即开局，无需通关解锁，随意换级</span>
-  </div>
-  <div class="diff-grid" id="diffCards"></div>
-  <div class="diff-hint">L1 启蒙最快，L5 大师最快 · 难度越高，脸谱越多，跳转越疾</div>
-  <button class="btn-start" id="btnStart">开 戏</button>
-  <div class="hint">建议开启声音 · 支持触屏</div>
+  <div class="lvl-list" id="lvlList"></div>
+  <button class="btn-start" id="btnStart">开 始 训 练</button>
+  <div class="hint">认角色造型 · 颜色随机干扰 · 建议开启声音</div>
 </div>
 
-<div class="overlay" id="difPanel">
-  <h1 class="title" style="font-size:clamp(28px,8vw,40px)">换 级</h1>
-  <div class="subtitle">自主选择 · 全部开放 · 点击即开局</div>
-  <div class="divider" style="margin:18px auto"></div>
-  <div class="diff-grid" id="diffCardsPanel"></div>
-  <div class="diff-hint">难度越高，脸谱越多，跳转越快</div>
-</div>
-
-<div class="overlay" id="endPanel">
+<!-- 结算 -->
+<div class="panel" id="endPanel">
   <div class="subtitle">— 落 幕 —</div>
-  <div class="rank" id="rankName">初入梨园</div>
+  <div class="rank" id="rankName">—</div>
   <div class="rank-poem" id="rankPoem"></div>
   <div class="score-big" id="finalScore">0</div>
-  <div class="stats">
-    <div class="stat"><span>最高连击</span><b id="finalCombo">0</b></div>
-    <div class="stat"><span>准确率</span><b id="finalAcc">0%</b></div>
-    <div class="stat"><span>命中</span><b id="finalHits">0</b></div>
-  </div>
-  <div class="best-tip" id="bestTip"></div>
-  <div class="btn-row">
-    <button class="btn-start" id="btnAgain">再 来 一 出</button>
-    <button class="btn-ghost" id="btnChange">换 级 再 来</button>
+  <div class="stats6" id="finalStats"></div>
+  <div class="suggest" id="suggestBox"></div>
+  <div style="display:flex;gap:10px;margin-top:16px;">
+    <button class="btn-start" id="btnAgain">换 级 再 来</button>
+    <button class="btn-ghost" id="btnBack">返 回 首 页</button>
   </div>
 </div>
 
-<div class="overlay" id="levelPanel">
-  <div class="subtitle">— 就 绪 —</div>
-  <div class="lp-key" id="lpKey">L1</div>
-  <div class="lp-name" id="lpName">启蒙</div>
-  <div class="lp-meta" id="lpMeta"></div>
-  <div class="divider" style="margin:22px auto"></div>
-  <div class="btn-row">
-    <button class="btn-start" id="lpStart">▶ 开始游戏</button>
-  </div>
-  <button class="btn-ghost" id="lpBack" style="margin-top:16px;">← 返回</button>
+<!-- 切换难度 -->
+<div class="panel switch-panel" id="switchPanel">
+  <div class="title2">切换难度</div>
+  <div class="subtitle">— 全 部 开 放 · 自 主 选 择 —</div>
+  <div class="switch-list" id="switchList"></div>
+  <button class="btn-ghost" id="btnSwitchBack">取 消</button>
 </div>
 
-<div class="overlay" id="pauseVeil">
-  <div class="subtitle">— 已 暂 停 —</div>
-  <div class="pause-box">
-    <button class="btn-start" id="pvResume">继 续</button>
-    <button class="btn-ghost" id="pvStop">中 断（结算）</button>
-    <button class="btn-ghost" id="pvHome">返回主页面</button>
+<!-- 设置 -->
+<div class="panel" id="settingsPanel">
+  <div class="subtitle">— 设 置 —</div>
+  <div class="set-wrap">
+    <div class="set-row"><div class="lbl">音效<small>锣鼓与变脸风声</small></div>
+      <label class="switch"><input type="checkbox" id="setSound" checked><span class="sl"></span></label></div>
+    <div class="set-row"><div class="lbl">色弱模式<small>增强边框与角色标注</small></div>
+      <label class="switch"><input type="checkbox" id="setCB"><span class="sl"></span></label></div>
+    <div class="set-row"><div class="lbl">震动反馈<small>命中轻震·失误重震</small></div>
+      <label class="switch"><input type="checkbox" id="setVibe" checked><span class="sl"></span></label></div>
   </div>
+  <button class="btn-start" id="btnSetBack">完 成</button>
 </div>
 
 <script>
 (function(){
 'use strict';
 
-/* ==================== 脸谱配置（10 色） ==================== */
-const FACES = [
-  { key:'hong', name:'红', role:'忠勇 · 关羽',
-    bg:'#b52a25', deep:'#6b1512', ink:'#1a0605', line:'#f0d089', crownC:'#f0d089',
-    crown:'flame',   brow:'M48 74 C64 60 86 62 98 76', light:'#ff7166' },
-  { key:'hei', name:'黑', role:'刚直 · 张飞',
-    bg:'#3a332e', deep:'#141110', ink:'#e9dfc8', line:'#d9b45e', crownC:'#d9b45e',
-    crown:'thunder', brow:'M46 62 C64 56 86 58 98 74', light:'#bcb2a0' },
-  { key:'bai', name:'白', role:'机谋 · 曹操',
-    bg:'#e6ddc8', deep:'#b9ab8c', ink:'#1a1512', line:'#8a6b2f', crownC:'#1a1512',
-    crown:'cloud',   brow:'M50 74 C66 64 86 64 98 76', light:'#f6efdd' },
-  { key:'qing', name:'青', role:'妖异 · 鬼面',
-    bg:'#1f6b6b', deep:'#0b3535', ink:'#061a1a', line:'#8fe0d2', crownC:'#8fe0d2',
-    crown:'spiral',  brow:'M46 70 C64 54 86 60 98 80', light:'#5fe0cf' },
-  { key:'jin', name:'金', role:'神佛 · 护法',
-    bg:'#d9a72c', deep:'#8f691a', ink:'#3a2405', line:'#fff3c4', crownC:'#3a2405',
-    crown:'sun',     brow:'M48 66 C64 52 86 55 98 70', light:'#ffd257' },
-  { key:'zi', name:'紫', role:'刚正 · 侠士',
-    bg:'#6b3a86', deep:'#3a1f52', ink:'#efe0ff', line:'#e0bdf5', crownC:'#e0bdf5',
-    crown:'lotus',   brow:'M50 70 C66 58 86 60 98 74', light:'#c79bf0' },
-  { key:'cheng', name:'橙', role:'勇武 · 金甲',
-    bg:'#cf5f1f', deep:'#7a3010', ink:'#221003', line:'#f5cf9a', crownC:'#f5cf9a',
-    crown:'flame',   brow:'M48 74 C64 60 86 62 98 76', light:'#ff9a5c' },
-  { key:'lan', name:'蓝', role:'俊雅 · 儒将',
-    bg:'#2b52a0', deep:'#12264f', ink:'#e6f0ff', line:'#aac6ff', crownC:'#aac6ff',
-    crown:'thunder', brow:'M46 62 C64 56 86 58 98 74', light:'#8fb4ff' },
-  { key:'lv', name:'绿', role:'幽渺 · 山君',
-    bg:'#2e7d3a', deep:'#12371a', ink:'#eaffef', line:'#a8e6bc', crownC:'#a8e6bc',
-    crown:'cloud',   brow:'M50 74 C66 64 86 64 98 76', light:'#7fe0a0' },
-  { key:'fen', name:'粉', role:'柔媚 · 旦角',
-    bg:'#cf6f9e', deep:'#6e2349', ink:'#fff0f7', line:'#ffd0e3', crownC:'#ffd0e3',
-    crown:'lotus',   brow:'M50 70 C66 58 86 60 98 74', light:'#ffa6c8' }
+/* ============ 一、角色（造型决定身份，颜色纯干扰） ============ */
+const ROLES=[
+  {key:'guan', ch:'关', name:'关羽', shape:'flame',  cb:'#e0433b'},
+  {key:'zhang',ch:'张', name:'张飞', shape:'thunder',cb:'#5a4a3a'},
+  {key:'cao', ch:'曹', name:'曹操', shape:'cloud',   cb:'#9a8a6a'},
+  {key:'gui', ch:'鬼', name:'鬼面', shape:'spiral',  cb:'#2aa5a0'},
+  {key:'hu',  ch:'护', name:'护法', shape:'sun',     cb:'#d9a72c'},
+  {key:'xia', ch:'侠', name:'侠士', shape:'lotus',   cb:'#8a4fc0'},
+  {key:'zhu', ch:'竹', name:'竹客', shape:'bamboo',  cb:'#4fae6a'},
+  {key:'ling',ch:'伶', name:'伶人', shape:'tassel',  cb:'#ef9444'},
+  {key:'shui',ch:'水', name:'水神', shape:'wave',    cb:'#4a90d9'},
+  {key:'hua', ch:'花', name:'花旦', shape:'plum',    cb:'#ee8ab0'}
+];
+const MARK={ // 额头印记（按角色唯一）
+  flame:'<circle cx="100" cy="58" r="6" fill="none" stroke="#fff" stroke-width="2.4"/><path d="M100 47 L104 52 L100 57 L96 52 Z" fill="#fff"/>',
+  thunder:'<path d="M100 50 L92 58 L98 58 L94 66 L103 56 L97 56 Z" fill="#fff"/>',
+  cloud:'<circle cx="100" cy="56" r="4" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M92 60 C90 67 95 68 100 64 C104 68 110 66 108 60" fill="none" stroke="#fff" stroke-width="1.8"/>',
+  spiral:'<path d="M100 50 C95 52 95 58 100 59 C104 60 105 55 101 54" fill="none" stroke="#fff" stroke-width="2.2"/>',
+  sun:'<circle cx="100" cy="56" r="3.4" fill="#fff"/><path d="M100 49 L100 52 M100 60 L100 63 M93 56 L96 56 M104 56 L107 56" stroke="#fff" stroke-width="1.8"/>',
+  lotus:'<path d="M93 62 C96 53 104 53 107 62 C103 58 97 58 93 62 Z" fill="#fff"/>',
+  bamboo:'<path d="M96 48 L96 65 M104 48 L104 65" stroke="#fff" stroke-width="2"/>',
+  tassel:'<path d="M98 49 L102 49 L102 64 L98 64 Z" fill="#fff"/>',
+  wave:'<path d="M92 58 C96 54 100 54 108 58 C104 62 96 62 92 58 Z" fill="none" stroke="#fff" stroke-width="2"/>',
+  plum:'<circle cx="100" cy="54" r="3.2" fill="#fff"/><circle cx="100" cy="54" r="6" fill="none" stroke="#fff" stroke-width="1.4"/>'
+};
+const CROWN={
+  flame:c=>`<path d="M100 16 C86 34 87 50 100 62 C113 50 114 34 100 16 Z" fill="${c}"/>`,
+  thunder:c=>`<path d="M100 18 L100 48" stroke="${c}" stroke-width="6"/><path d="M100 24 L84 34 L97 42 L80 54" fill="none" stroke="${c}" stroke-width="5"/>`,
+  cloud:c=>`<path d="M100 22 L100 50" stroke="${c}" stroke-width="3.5"/><path d="M100 50 C87 50 81 41 89 35 C82 30 87 20 96 25" fill="none" stroke="${c}" stroke-width="4"/>`,
+  spiral:c=>`<path d="M100 20 L100 38" stroke="${c}" stroke-width="5"/><path d="M100 38 C87 38 82 52 94 56 C104 59 107 47 99 45" fill="none" stroke="${c}" stroke-width="4.5"/>`,
+  sun:c=>`<circle cx="100" cy="42" r="12" fill="none" stroke="${c}" stroke-width="5"/><circle cx="100" cy="42" r="4" fill="${c}"/>`,
+  lotus:c=>`<path d="M100 58 C87 47 87 30 100 16 C113 30 113 47 100 58 Z" fill="${c}"/>`,
+  bamboo:c=>`<path d="M100 16 L100 50" stroke="${c}" stroke-width="5"/><path d="M100 30 C87 32 83 42 89 47" fill="none" stroke="${c}" stroke-width="4"/>`,
+  tassel:c=>`<rect x="94" y="14" width="12" height="26" rx="4" fill="${c}"/><path d="M100 40 C91 49 91 59 100 64 C109 59 109 49 100 40" fill="${c}"/>`,
+  wave:c=>`<path d="M84 30 C92 22 108 22 116 30 M84 40 C92 32 108 32 116 40" fill="none" stroke="${c}" stroke-width="4"/>`,
+  plum:c=>`<path d="M100 24 C96 16 88 16 86 22 C92 22 96 22 100 32 C104 22 108 22 114 22 C112 16 104 16 100 24 Z" fill="${c}"/>`
+};
+const PALETTE=[
+ {n:'朱红',c:'#e0433b',d:'#7c1a16'},{n:'墨黑',c:'#3a352f',d:'#14110e'},{n:'素白',c:'#f2ead6',d:'#b6a98c'},
+ {n:'青色',c:'#2aa5a0',d:'#124c49'},{n:'鎏金',c:'#e0b13a',d:'#8f6f16'},{n:'紫棠',c:'#8a4fc0',d:'#40205f'},
+ {n:'翠绿',c:'#4fae6a',d:'#1f542f'},{n:'橙黄',c:'#ef9444',d:'#96501a'},{n:'宝蓝',c:'#4a90d9',d:'#1f4270'},
+ {n:'粉黛',c:'#ee8ab0',d:'#8c315c'},{n:'棕栗',c:'#8a5a32',d:'#4a2d14'},{n:'玄灰',c:'#7a7f88',d:'#3c4048'},
+ {n:'莓红',c:'#c03a6a',d:'#6c1636'},{n:'青绿',c:'#2fb893',d:'#115e47'},{n:'琥珀',c:'#c98a20',d:'#6e4710'},
+ {n:'石墨',c:'#4d5566',d:'#23272f'}
 ];
 
-/* 额头纹样（只画左半，右侧镜像） */
-const CROWN = {
-  flame: c => `
-    <path d="M100 20 C84 42 86 58 100 72 C114 58 116 42 100 20 Z" fill="${c}" opacity=".95"/>
-    <path d="M74 38 C64 54 70 66 84 68" fill="none" stroke="${c}" stroke-width="4.5" stroke-linecap="round" opacity=".9"/>
-    <path d="M58 56 C50 68 55 78 66 80" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" opacity=".6"/>`,
-  thunder: c => `
-    <path d="M100 22 L100 60" stroke="${c}" stroke-width="6" stroke-linecap="round"/>
-    <path d="M100 28 L82 38 L96 46 L78 58" fill="none" stroke="${c}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-    <path d="M88 22 L74 30" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" opacity=".7"/>`,
-  cloud: c => `
-    <path d="M100 28 L100 64" stroke="${c}" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>
-    <path d="M100 64 C86 64 80 54 89 47 C81 42 86 31 96 36" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M74 46 C66 52 68 62 78 63" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" opacity=".7"/>`,
-  spiral: c => `
-    <path d="M100 24 L100 42" stroke="${c}" stroke-width="5" stroke-linecap="round"/>
-    <path d="M100 42 C86 42 81 57 94 61 C105 64 108 51 99 49" fill="none" stroke="${c}" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M72 40 C64 50 66 62 77 66" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" opacity=".8"/>
-    <circle cx="72" cy="34" r="3.5" fill="${c}" opacity=".85"/>`,
-  sun: c => `
-    <circle cx="100" cy="46" r="13" fill="none" stroke="${c}" stroke-width="5"/>
-    <circle cx="100" cy="46" r="4.5" fill="${c}"/>
-    <path d="M100 22 L100 28 M74 32 L79 37 M66 46 L72 46" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/>
-    <path d="M78 66 C86 70 92 70 96 68" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" opacity=".65"/>`,
-  lotus: c => `
-    <path d="M100 72 C86 60 86 42 100 26 C114 42 114 60 100 72 Z" fill="${c}" opacity=".92"/>
-    <path d="M76 64 C67 53 70 40 81 36" fill="none" stroke="${c}" stroke-width="4.5" stroke-linecap="round" opacity=".9"/>
-    <path d="M60 56 C53 48 56 38 64 36" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" opacity=".55"/>`
-};
-
-/* 生成一张脸谱 SVG */
-function faceSVG(i){
-  const f = FACES[i];
-  const gid = 'fg' + i;
-  const line = f.line, ink = f.ink, cc = f.crownC;
-  const crown = CROWN[f.crown](cc);
-  const half = `
-    <path d="${f.brow}" fill="none" stroke="${ink}" stroke-width="9" stroke-linecap="round"/>
-    <path d="M52 94 C66 79 88 79 98 94 C88 109 66 109 52 94 Z" fill="#f8f1e2" stroke="${ink}" stroke-width="3"/>
-    <circle cx="72" cy="94" r="6.6" fill="#100a08"/>
-    <circle cx="69.6" cy="91.6" r="2" fill="#f8f1e2" opacity=".7"/>
-    <path d="M44 120 C50 144 60 160 74 172" fill="none" stroke="${line}" stroke-width="4.5" stroke-linecap="round" opacity=".5"/>
-    <path d="M58 138 C66 150 74 158 84 164" fill="none" stroke="${line}" stroke-width="2.5" stroke-linecap="round" opacity=".35"/>`;
+/* 脸谱：形状=角色，填充=池色 */
+function faceSVG(ri,ci){
+  const r=ROLES[ri], col=PALETTE[ci], gid='fg'+ri+'_'+ci;
+  const crown=CROWN[r.shape](col.d), mark=MARK[r.shape];
+  const eye=`<path d="M52 88 C66 74 88 74 98 88 C88 102 66 102 52 88 Z" fill="#f8f1e2" stroke="${col.d}" stroke-width="2.4"/>
+    <circle cx="71" cy="88" r="6" fill="#0e0907"/><circle cx="68.6" cy="85.6" r="1.9" fill="#fff" opacity=".75"/>`;
   return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <radialGradient id="${gid}" cx="50%" cy="30%" r="78%">
-        <stop offset="0%" stop-color="${f.bg}"/>
-        <stop offset="68%" stop-color="${f.bg}"/>
-        <stop offset="100%" stop-color="${f.deep}"/>
-      </radialGradient>
-    </defs>
-    <path d="M100 14 C144 14 168 48 168 96 C168 146 152 190 118 216 C108 224 92 224 82 216 C48 190 32 146 32 96 C32 48 56 14 100 14 Z"
-          fill="url(#${gid})" stroke="${line}" stroke-width="1.6" stroke-opacity=".55"/>
-    <g>${crown}</g>
-    <g transform="translate(200 0) scale(-1 1)">${crown}</g>
-    <g>${half}</g>
-    <g transform="translate(200 0) scale(-1 1)">${half}</g>
-    <path d="M100 104 L100 148" stroke="${ink}" stroke-width="3" stroke-linecap="round" opacity=".7"/>
-    <path d="M92 150 Q100 157 108 150" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round" opacity=".55"/>
-    <path d="M78 178 Q100 192 122 178" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>
+    <defs><radialGradient id="${gid}" cx="50%" cy="28%" r="80%"><stop offset="0%" stop-color="${col.c}"/><stop offset="70%" stop-color="${col.c}"/><stop offset="100%" stop-color="${col.d}"/></radialGradient></defs>
+    <path d="M100 12 C146 12 168 50 168 98 C168 148 152 190 118 216 C108 224 92 224 82 216 C48 190 32 148 32 98 C32 50 54 12 100 12 Z" fill="url(#${gid})" stroke="${col.d}" stroke-width="1.6" stroke-opacity=".5"/>
+    <g transform="translate(200 0) scale(-1 1)">${crown}</g><g>${crown}</g>
+    <g>${mark}</g>
+    <path d="M48 46 C60 34 82 34 96 44" fill="none" stroke="${col.d}" stroke-width="7" stroke-linecap="round" opacity=".85"/>
+    <g>${eye}</g><g transform="translate(200 0) scale(-1 1)">${eye}</g>
+    <path d="M86 122 Q100 128 114 122" fill="none" stroke="${col.d}" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+    <path d="M78 150 Q100 164 122 150" fill="none" stroke="${col.d}" stroke-width="6" stroke-linecap="round"/>
+    <path d="M70 172 C82 186 118 186 130 172" fill="none" stroke="${col.d}" stroke-width="4" stroke-linecap="round" opacity=".4"/>
   </svg>`;
 }
 
-/* ==================== 难度等级（自主选择 · 全部开放 · 不锁级） ==================== */
-const DIFFS = [
-  { key:'L1', name:'启蒙', tag:'推荐', faces:3, speed:1150, start:1150, win:'11.5s' },
-  { key:'L2', name:'入门', tag:'',     faces:4, speed:925,  start:925,  win:'10s' },
-  { key:'L3', name:'进阶', tag:'',     faces:6, speed:675,  start:675,  win:'8s' },
-  { key:'L4', name:'挑战', tag:'',     faces:8, speed:240,  start:500,  win:'6s' },
-  { key:'L5', name:'大师', tag:'',     faces:10,speed:180,  start:380,  win:'4s' }
+/* ============ 二、等级（全开放） ============ */
+const LEVELS=[
+  {level:1,name:'启蒙',count:3, win:11500, mult:1.0},
+  {level:2,name:'入门',count:4, win:10000, mult:1.2},
+  {level:3,name:'进阶',count:6, win:8000,  mult:1.5},
+  {level:4,name:'挑战',count:8, win:6000,  mult:3.0},
+  {level:5,name:'大师',count:10,win:4000,  mult:5.0}
 ];
+const JUMP_FIXED=10000; // 每次变脸统一固定 10 秒
+function levelOf(lv){return LEVELS[(lv-1)||0];}
 
-/* ==================== DOM ==================== */
-const $ = s => document.querySelector(s);
-const faceEl = $('#face');
-const gameEl = $('#game');
-const cmdMain = $('#cmdMain');
-const cmdText = $('#cmdText');
-const cmdDot = $('#cmdDot');
-const elScore = $('#score');
-const elCombo = $('#combo');
-const elLives = $('#lives');
-const elDiff = $('#diffBadge');
-const elRound = $('#roundTime');
-const countWrap = $('#countWrap');
-const countRing = $('#countRing');
-const countNum = $('#countNum');
-const RING_LEN = 2 * Math.PI * 42;
+/* ============ 三、存储 ============ */
+const KEY='bl2.';
+function lsGet(k,d){try{const v=localStorage.getItem(KEY+k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(KEY+k,JSON.stringify(v));}catch(e){}}
+function getBest(lv){return Object.assign({acc:0,avgRT:9999,combo:0,best:0},lsGet('b'+lv,{}));}
+function saveBest(lv,r){lsSet('b'+lv,r);}
+function getSettings(){return Object.assign({snd:true,cb:false,vibe:true},lsGet('set',{}));}
+function setSettings(s){lsSet('set',s);}
 
-/* ==================== Canvas 粒子 ==================== */
-const fxCanvas = $('#fx');
-const fxc = fxCanvas.getContext('2d');
-let W = 0, H = 0, parts = [], dust = [];
+/* ============ 四、DOM ============ */
+const $=s=>document.querySelector(s);
+const $o={opts:$('#options'),fb:$('#feedback'),fbBadge:$('#fbBadge'),fbRt:$('#fbRt'),fbTip:$('#fbTip'),
+  cmdMain:$('#cmdMain'),cmdIco:$('#cmdIco'),cmdName:$('#cmdName'),combo:$('#combo'),hudLv:$('#hudLv'),
+  hudRound:null,lives:$('#lives'),winFill:$('#winFill'),winLbl:$('#winLbl'),hudAcc:$('#hudAcc'),diffCur:$('#diffCur')};
 
-function resize(){
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth; H = window.innerHeight;
-  fxCanvas.width = Math.floor(W * dpr);
-  fxCanvas.height = Math.floor(H * dpr);
-  fxCanvas.style.width = W + 'px';
-  fxCanvas.style.height = H + 'px';
-  fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (dust.length === 0) initDust();
+/* ============ 五、粒子 ============ */
+const fx=$('#fx'),fxc=fx.getContext('2d');let W=0,H=0,parts=[],dust=[];
+function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;fx.width=W*dpr;fx.height=H*dpr;fx.style.width=W+'px';fx.style.height=H+'px';fxc.setTransform(dpr,0,0,dpr,0,0);if(!dust.length){for(let i=0;i<40;i++)dust.push({x:Math.random()*W,y:Math.random()*H,r:.6+Math.random()*1.7,vy:-.06-Math.random()*.26,vx:(Math.random()-.5)*.16,a:.06+Math.random()*.3,ph:Math.random()*6.28});}}
+function burst(x,y,cols,n,spd){for(let i=0;i<n;i++){const a=Math.random()*6.28,v=spd*(.3+Math.random()*1.05);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.2,life:1,decay:.011+Math.random()*.019,size:1.4+Math.random()*3.4,color:cols[(Math.random()*cols.length)|0]});}}
+function burstEl(el,cols){const r=el.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,cols,20,6);}
+function loop(t){fxc.clearRect(0,0,W,H);for(const d of dust){d.y+=d.vy;d.x+=d.vx+Math.sin(t/2400+d.ph)*.1;if(d.y<-12){d.y=H+12;d.x=Math.random()*W;}fxc.beginPath();fxc.arc(d.x,d.y,d.r,0,6.28);fxc.fillStyle=`rgba(232,196,106,${d.a})`;fxc.fill();}
+ for(let j=parts.length-1;j>=0;j--){const p=parts[j];p.vy+=.15;p.vx*=.986;p.vy*=.986;p.x+=p.vx;p.y+=p.vy;p.life-=p.decay;if(p.life<=0){parts.splice(j,1);continue;}fxc.globalAlpha=Math.max(0,p.life);fxc.beginPath();fxc.arc(p.x,p.y,Math.max(.2,p.size*p.life),0,6.28);fxc.fillStyle=p.color;fxc.fill();}
+ fxc.globalAlpha=1;requestAnimationFrame(loop);}
+
+/* ============ 六、音效 + 震动 ============ */
+let AC=null,noiseBuf=null,SFX=true,VIBE=true;
+function acInit(){if(!SFX)return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!AC)AC=new C();if(AC.state==='suspended')AC.resume();}
+function getNoise(){if(noiseBuf)return noiseBuf;const b=AC.createBuffer(1,Math.floor(AC.sampleRate*.6),AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;noiseBuf=b;return b;}
+function sfxSwish(){if(!AC)return;const t=AC.currentTime,s=AC.createBufferSource();s.buffer=getNoise();const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.4;bp.frequency.setValueAtTime(2200,t);bp.frequency.exponentialRampToValueAtTime(520,t+.16);const g=AC.createGain();g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.1,t+.012);g.gain.exponentialRampToValueAtTime(.0008,t+.19);s.connect(bp);bp.connect(g);g.connect(AC.destination);s.start(t);s.stop(t+.22);}
+function sfxGong(){if(!AC)return;const t=AC.currentTime,fs=[196,294,411,548,733];for(let i=0;i<fs.length;i++){const o=AC.createOscillator();o.type='sine';o.frequency.setValueAtTime(fs[i],t);o.frequency.exponentialRampToValueAtTime(fs[i]*.93,t+1.1);const g=AC.createGain();g.gain.setValueAtTime(.16/(i*.75+1),t);g.gain.exponentialRampToValueAtTime(.0006,t+1.25);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+1.35);}}
+function sfxThud(){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(44,t+.32);const g=AC.createGain();g.gain.setValueAtTime(.34,t);g.gain.exponentialRampToValueAtTime(.001,t+.42);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.46);}
+function sfxAlert(){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator();o.type='square';o.frequency.setValueAtTime(880,t);o.frequency.setValueAtTime(660,t+.12);o.frequency.setValueAtTime(880,t+.24);const g=AC.createGain();g.gain.setValueAtTime(.05,t);g.gain.setValueAtTime(.05,t+.2);g.gain.exponentialRampToValueAtTime(.001,t+.34);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.36);}
+function vibe(ms){if(VIBE&&navigator.vibrate){try{navigator.vibrate(ms);}catch(e){}}}
+
+/* ============ 七、游戏状态 ============ */
+const MAX_ROUNDS=80;
+const G={running:false,lv:1,round:0,lives:5,hits:0,misses:0,timeouts:0,shots:0,combo:0,bestCombo:0,score:0,
+  RTs:[],colorHits:[],cheatDetected:false,cards:[],targetPos:0,targetRole:0,t0:0,timer:null,swishT:null,winRAF:0,lockUntil:0,answered:false,alerted:false};
+function curLv(){return levelOf(G.lv);}
+
+/* —— 每轮：洗角色 + 随机配色 —— */
+function pickDistinct(n){
+  const idx=[...Array(PALETTE.length).keys()]; for(let i=idx.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[idx[i],idx[j]]=[idx[j],idx[i]];} return idx.slice(0,n);
 }
-function initDust(){
-  dust = [];
-  for (let i = 0; i < 46; i++){
-    dust.push({
-      x: Math.random() * W, y: Math.random() * H,
-      r: 0.6 + Math.random() * 1.7,
-      vy: -0.06 - Math.random() * 0.26,
-      vx: (Math.random() - 0.5) * 0.16,
-      a: 0.06 + Math.random() * 0.3,
-      ph: Math.random() * 6.28
-    });
-  }
+function startRound(){
+  if(!G.running)return;
+  G.answered=false; G.alerted=false;
+  G.round++;
+  const L=curLv();
+  // 选 n 个不同角色
+  const rIdx=[...Array(ROLES.length).keys()]; for(let i=rIdx.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[rIdx[i],rIdx[j]]=[rIdx[j],rIdx[i]];}
+  const roles=rIdx.slice(0,L.count);
+  const colIdx=pickDistinct(L.count);
+  G.targetPos=(Math.random()*L.count)|0;
+  G.targetRole=roles[G.targetPos];
+  G.cards=roles.map((role,i)=>({role,color:colIdx[i]}));
+  renderCmd(); renderOptions();
+  G.t0=performance.now(); G.lockUntil=G.t0;
+  clearTimeout(G.timer); clearInterval(G.swishT);
+  // 脸谱跳转：简单难度慢、难度越大越快；只变颜色，不变身份与位置
+  G.cheatDetected=colorCheatDetected(); // 仅用于结算提示，不影响跳转间隔
+  G.swishT=setInterval(swapColors, JUMP_FIXED); // 每次变脸统一 10 秒
+  // 进度条
+  winFillStart(L.win);
+  G.timer=setTimeout(onTimeout, L.win);
 }
-function burst(x, y, colors, count, spd){
-  for (let i = 0; i < count; i++){
-    const a = Math.random() * Math.PI * 2;
-    const v = spd * (0.3 + Math.random() * 1.05);
-    parts.push({
-      x: x, y: y,
-      vx: Math.cos(a) * v,
-      vy: Math.sin(a) * v - 1.2,
-      life: 1,
-      decay: 0.011 + Math.random() * 0.019,
-      size: 1.4 + Math.random() * 3.4,
-      color: colors[(Math.random() * colors.length) | 0]
-    });
-  }
-}
-function burstFrom(el, colors, count, spd){
-  const r = el.getBoundingClientRect();
-  burst(r.left + r.width / 2, r.top + r.height / 2, colors, count, spd);
-}
-function loop(t){
-  fxc.clearRect(0, 0, W, H);
-  for (let i = 0; i < dust.length; i++){
-    const d = dust[i];
-    d.y += d.vy;
-    d.x += d.vx + Math.sin(t / 2400 + d.ph) * 0.1;
-    if (d.y < -12){ d.y = H + 12; d.x = Math.random() * W; }
-    fxc.beginPath();
-    fxc.arc(d.x, d.y, d.r, 0, 6.2832);
-    fxc.fillStyle = 'rgba(232,196,106,' + d.a + ')';
-    fxc.fill();
-  }
-  for (let j = parts.length - 1; j >= 0; j--){
-    const p = parts[j];
-    p.vy += 0.15; p.vx *= 0.986; p.vy *= 0.986;
-    p.x += p.vx; p.y += p.vy;
-    p.life -= p.decay;
-    if (p.life <= 0){ parts.splice(j, 1); continue; }
-    fxc.globalAlpha = Math.max(0, p.life);
-    fxc.beginPath();
-    fxc.arc(p.x, p.y, Math.max(0.2, p.size * p.life), 0, 6.2832);
-    fxc.fillStyle = p.color;
-    fxc.fill();
-  }
-  fxc.globalAlpha = 1;
-  requestAnimationFrame(loop);
+function swapColors(){ // 仅换色
+  if(!G.running||G.answered)return;
+  const n=G.cards.length, fresh=pickDistinct(n);
+  for(let i=0;i<n;i++) G.cards[i].color=fresh[i];
+  renderOptions(true);
+  if(SFX)sfxSwish();
 }
 
-/* ==================== 音效（Web Audio 实时合成） ==================== */
-let AC = null, noiseBuf = null;
-function acInit(){
-  if (!AC){
-    const C = window.AudioContext || window.webkitAudioContext;
-    if (!C) return;
-    AC = new C();
-  }
-  if (AC.state === 'suspended') AC.resume();
-}
-function getNoise(){
-  if (noiseBuf) return noiseBuf;
-  const len = Math.floor(AC.sampleRate * 0.6);
-  const b = AC.createBuffer(1, len, AC.sampleRate);
-  const d = b.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  noiseBuf = b;
-  return b;
-}
-function sfxSwish(){
-  if (!AC) return;
-  const t = AC.currentTime;
-  const src = AC.createBufferSource(); src.buffer = getNoise();
-  const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
-  bp.frequency.setValueAtTime(2200, t);
-  bp.frequency.exponentialRampToValueAtTime(520, t + 0.16);
-  const g = AC.createGain();
-  g.gain.setValueAtTime(0.001, t);
-  g.gain.exponentialRampToValueAtTime(0.1, t + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0008, t + 0.19);
-  src.connect(bp); bp.connect(g); g.connect(AC.destination);
-  src.start(t); src.stop(t + 0.22);
-}
-function sfxGong(){
-  if (!AC) return;
-  const t = AC.currentTime;
-  const freqs = [196, 294, 411, 548, 733];
-  for (let i = 0; i < freqs.length; i++){
-    const f = freqs[i];
-    const o = AC.createOscillator(); o.type = 'sine';
-    o.frequency.setValueAtTime(f, t);
-    o.frequency.exponentialRampToValueAtTime(f * 0.93, t + 1.1);
-    const g = AC.createGain();
-    g.gain.setValueAtTime(0.16 / (i * 0.75 + 1), t);
-    g.gain.exponentialRampToValueAtTime(0.0006, t + 1.25);
-    o.connect(g); g.connect(AC.destination);
-    o.start(t); o.stop(t + 1.35);
-  }
-}
-function sfxThud(){
-  if (!AC) return;
-  const t = AC.currentTime;
-  const o = AC.createOscillator(); o.type = 'sine';
-  o.frequency.setValueAtTime(150, t);
-  o.frequency.exponentialRampToValueAtTime(44, t + 0.32);
-  const g = AC.createGain();
-  g.gain.setValueAtTime(0.34, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
-  o.connect(g); g.connect(AC.destination);
-  o.start(t); o.stop(t + 0.46);
-}
-
-/* ==================== 游戏状态 ==================== */
-const LIVES = 5;              // 每局五条命
-const G = {
-  running:false, score:0, combo:0, best:0, lives:LIVES,
-  hits:0, shots:0, face:0, cmd:0, lastCmd:-1,
-  speed:2600, base:2600, start:2600, // base=难度最终间隔, start=开局起始间隔
-  timer:null, lockUntil:0, li:0, paused:false
-};
-
-function pool(){ return FACES.slice(0, DIFFS[G.li].faces); }
-
-function renderFace(i, animate){
-  faceEl.innerHTML = faceSVG(i);
-  if (animate){
-    faceEl.classList.remove('pop');
-    void faceEl.offsetWidth;
-    faceEl.classList.add('pop');
-  }
-}
+/* —— 渲染 —— */
 function renderCmd(){
-  const f = FACES[G.cmd];
-  cmdText.textContent = f.name + '脸';
-  cmdText.style.color = f.light;
-  cmdDot.style.color = f.bg;
-  cmdMain.classList.remove('pop');
-  void cmdMain.offsetWidth;
-  cmdMain.classList.add('pop');
+  const r=ROLES[G.targetRole];
+  $o.cmdIco.innerHTML=faceSVG(G.targetRole, (G.targetPos%PALETTE.length));
+  $o.cmdName.innerHTML=r.name+'<small>· 找这张脸</small>';
+  $o.cmdName.style.color='var(--gold-2)';
+  $o.cmdMain.classList.remove('pop'); void $o.cmdMain.offsetWidth; $o.cmdMain.classList.add('pop');
 }
-function renderLives(){
-  let html = '';
-  for (let i = 0; i < LIVES; i++) html += '<i class="' + (i < G.lives ? 'on' : '') + '">◆</i>';
-  elLives.innerHTML = html;
+function renderOptions(swap){
+  const L=curLv(), grid='g'+L.count;
+  $o.opts.className='grid-options '+grid;
+  let html='';
+  for(let i=0;i<G.cards.length;i++){
+    const card=G.cards[i], r=ROLES[card.role], col=PALETTE[card.color];
+    html+=`<div class="opt-card" data-i="${i}" data-role="${card.role}" style="${SFX&&!SFX?'':''}">
+      ${faceSVG(card.role, card.color)}
+      <span class="opt-tag" style="color:${col.c}">${r.ch}</span></div>`;
+  }
+  $o.opts.innerHTML=html;
+  for(const c of $o.opts.children){c.addEventListener('pointerdown',onPick);}
+  if(swap){for(const c of $o.opts.children)c.classList.add('swap');}
 }
-function bump(el){
-  el.classList.remove('bump');
-  void el.offsetWidth;
-  el.classList.add('bump');
-}
+function renderCmdTag(){ $o.diffCur.textContent='L'+G.lv+' '+levelOf(G.lv).name; }
 function updateHUD(){
-  elScore.textContent = G.score;
-  elCombo.textContent = G.combo;
-  elDiff.textContent = DIFFS[G.li].key;
-  renderLives();
+  $o.combo.textContent=G.combo;
+  $o.hudLv.textContent='L'+G.lv+' '+levelOf(G.lv).name;
+  $o.hudAcc.textContent=(G.shots?Math.round(G.hits/G.shots*100):0)+'%';
+  $o.lives.textContent='♥'.repeat(Math.max(0,G.lives));
+  renderCmdTag();
 }
-function floatText(text, x, y, color){
-  const d = document.createElement('div');
-  d.className = 'float';
-  d.textContent = text;
-  d.style.left = x + 'px';
-  d.style.top = y + 'px';
-  if (color) d.style.color = color;
-  document.body.appendChild(d);
-  void d.offsetWidth;
-  d.classList.add('go');
-  setTimeout(() => d.remove(), 950);
+function bump(el){if(!el)return;el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}
+function floatText(t,x,y,c){const d=document.createElement('div');d.className='float';d.textContent=t;d.style.left=x+'px';d.style.top=y+'px';if(c)d.style.color=c;document.body.appendChild(d);void d.offsetWidth;d.classList.add('go');setTimeout(()=>d.remove(),950);}
+function showFeedback(ok,rt,win){
+  $o.fbBadge.textContent=ok?'正 中':'未 中';
+  $o.fbBadge.className='fb-badge '+(ok?'ok':'no');
+  if(ok){$o.fbRt.innerHTML=`${rt}<small>ms</small>`;$o.fbTip.textContent=`本次 ${rt}ms · 窗口 ${ms(win)}`;}
+  else if(rt===null){$o.fbRt.textContent='—— 超时';$o.fbTip.textContent=`窗口已到 · 应寻 ${ROLES[G.targetRole].name}`;}
+  else{$o.fbRt.innerHTML=`${rt}<small>ms</small>`;$o.fbTip.textContent=`点错 · 应寻 ${ROLES[G.targetRole].name}`;}
+  $o.fb.classList.add('show'); clearTimeout(G.fbHide); G.fbHide=setTimeout(()=>$o.fb.classList.remove('show'),ok?500:760);
 }
-
-function newCommand(){
-  const p = pool();
-  let n;
-  let guard = 0;
-  do {
-    n = Math.floor(Math.random() * p.length);
-    guard++;
-  } while ((n === G.face || n === G.lastCmd) && guard < 40);
-  G.cmd = n;
-  G.lastCmd = n;
-  renderCmd();
+function lockCards(targetHighlight){
+  for(const c of $o.opts.children)c.classList.add('locked');
+  if(targetHighlight){const t=$o.opts.querySelector(`[data-i="${G.targetPos}"]`);if(t)t.classList.add('target');}
 }
-
-/* 倒计时环：随脸谱停留时长实时消耗，最后 2 秒变红（提示机制恒定不变） */
-let cdRAF = null, cdEnd = 0, cdDur = 0;
-function stopCountdown(){
-  if (cdRAF !== null){ cancelAnimationFrame(cdRAF); cdRAF = null; }
-}
-function startCountdown(dur){
-  stopCountdown();
-  cdDur = dur > 0 ? dur : 1;
-  cdEnd = performance.now() + cdDur;
-  countWrap.classList.remove('red');
-  countRing.style.transition = 'none';
-  countRing.setAttribute('stroke-dashoffset', '0');
-  (function step(){
-    const left = cdEnd - performance.now();
-    if (left <= 0){
-      countWrap.classList.remove('red');
-      countRing.setAttribute('stroke-dashoffset', String(RING_LEN));
-      countNum.textContent = '';
-      cdRAF = null;
-      return;
-    }
-    const frac = Math.max(0, left / cdDur);
-    countRing.setAttribute('stroke-dashoffset', String(RING_LEN * (1 - frac)));
-    if (left <= 2000){ countWrap.classList.add('red'); } else { countWrap.classList.remove('red'); }
-    countNum.textContent = (left / 1000).toFixed(1);
-    cdRAF = requestAnimationFrame(step);
-  })();
-}
-
-/* 每局限时倒计时（点亮脸谱即启动，统一 10 秒，归零结算） */
-const ROUND_MS = 10000;
-let roundRAF = null, roundEnd = 0, roundLeft = ROUND_MS;
-function startRoundTimer(){
-  stopRoundTimer();
-  roundLeft = ROUND_MS;
-  roundEnd = performance.now() + roundLeft;
-  elRound.textContent = (roundLeft / 1000).toFixed(1);
-  (function step(){
-    roundLeft = roundEnd - performance.now();
-    if (roundLeft <= 0){
-      elRound.textContent = '0.0';
-      roundRAF = null;
-      endRound();
-      return;
-    }
-    elRound.textContent = (roundLeft / 1000).toFixed(1);
-    roundRAF = requestAnimationFrame(step);
-  })();
-}
-function stopRoundTimer(){
-  if (roundRAF !== null){ cancelAnimationFrame(roundRAF); roundRAF = null; }
-}
-function pauseRoundTimer(){ stopRoundTimer(); }
-function resumeRoundTimer(){
-  stopRoundTimer();
-  roundEnd = performance.now() + Math.max(0, roundLeft);
-  (function step(){
-    roundLeft = roundEnd - performance.now();
-    if (roundLeft <= 0){
-      elRound.textContent = '0.0';
-      roundRAF = null;
-      endRound();
-      return;
-    }
-    elRound.textContent = (roundLeft / 1000).toFixed(1);
-    roundRAF = requestAnimationFrame(step);
-  })();
-}
-function endRound(){
-  if (G.running && !G.paused) gameOver();
-}
-
-function tick(){
-  if (!G.running) return;
-  const p = pool();
-  G.face = (G.face + 1) % p.length;
-  renderFace(G.face, true);
-  sfxSwish();
-  const interval = G.speed * (0.86 + Math.random() * 0.28);
-  G.timer = setTimeout(tick, interval);
-  startCountdown(interval);
-}
-
-function hitFace(){
-  G.shots++; G.hits++;
-  G.combo++;
-  if (G.combo > G.best) G.best = G.combo;
-  const gain = 100 + (G.combo - 1) * 25;
-  G.score += gain;
-
-  sfxGong();
-  faceEl.classList.remove('hit');
-  void faceEl.offsetWidth;
-  faceEl.classList.add('hit');
-  burstFrom(faceEl, ['#f7e3ac', '#e8c46a', '#fff6dd', '#d99b3a'], 30, 7);
-
-  const r = faceEl.getBoundingClientRect();
-  floatText('+' + gain, r.left + r.width / 2, r.top + r.height * 0.22);
-
-  if (G.combo > 1) bump(elCombo);
-  bump(elScore);
-  /* 渐进加速：L4/L5 从起步速度每命中温和提速，逼近最终基准，绝不一下过快 */
-  if (G.start > G.base){
-    G.speed = Math.max(G.base, G.speed * 0.985);
-  } else {
-    G.speed = Math.max(320, G.base * 0.82);
+function winFillStart(win){
+  cancelAnimationFrame(G.winRAF);
+  const t0=performance.now();
+  $o.winLbl.textContent='窗口 '+ms(win);
+  $o.winLbl.classList.remove('warn');$o.winFill.classList.remove('danger');
+  function step(){
+    const el=performance.now()-t0, p=Math.max(0,1-el/win);
+    $o.winFill.style.width=(p*100)+'%';
+    if(win-el<=2000){$o.winLbl.classList.add('warn');$o.winFill.classList.add('danger');if(!G.alerted&&G.running&&!G.answered){G.alerted=true;if(SFX)sfxAlert();}}
+    if(p>0&&G.running&&!G.answered)G.winRAF=requestAnimationFrame(step);
+    else if(p<=0)$o.winFill.style.width='0%';
   }
+  G.winRAF=requestAnimationFrame(step);
+}
+function ms(x){return x>=1000?(x/1000).toFixed(x%1000===0?0:1)+'s':x+'ms';}
+
+/* —— 防作弊：记录玩家点击的颜色分布 —— */
+function colorCheatDetected(){
+  if(G.colorHits.length<8) return false;
+  const t={}, total=G.colorHits.length, n=PALETTE.length;
+  for(const c of G.colorHits) t[c]=(t[c]||0)+1;
+  const maxPct=Math.max(...Object.values(t))/total;
+  const expected=1/n; // 均匀分布期望占比
+  return maxPct>expected*2.2; // 某色点击率显著偏高 → 疑似记颜色
+}
+
+/* —— 判定（按身份，与颜色无关） —— */
+function onPick(e){
+  const card=e.currentTarget, i=parseInt(card.dataset.i,10);
+  if(!G.running||G.answered)return;
+  const now=performance.now(); if(now<G.lockUntil)return; G.lockUntil=now+100;
+  G.colorHits.push(G.cards[i].color); // 记录玩家点击的该位置当前颜色
+  const rt=Math.round(now-G.t0), win=curLv().win;
+  if(G.cards[i].role===G.targetRole){ judgeHit(i,rt,win,card); }
+  else{ judgeMiss(i,rt,win,card); }
+}
+function judgeHit(i,rt,win,card){
+  G.answered=true; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT); clearTimeout(G.timer);
+  G.shots++; G.RTs.push(rt); G.hits++; G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo;
+  const speed=Math.max(0,Math.min(1,(win-rt)/win));
+  const gain=Math.round(100*curLv().mult*(0.3*speed+0.7)+G.combo*6);
+  G.score+=gain;
+  if(SFX)sfxGong(); vibe(10);
+  card.classList.add('hit'); burstEl(card,['#f7e3ac','#e8c46a','#fff6dd','#d99b3a']);
+  const r=card.getBoundingClientRect(); floatText('+'+gain,r.left+r.width/2,r.top-6);
+  if(G.combo>1)bump($o.combo);
+  showFeedback(true,rt,win);
   updateHUD();
-  newCommand();
-
-  clearTimeout(G.timer);
-  G.timer = setTimeout(tick, G.speed * 1.0);
-  startCountdown(G.speed * 1.0);
+  setTimeout(nextAfter,460);
 }
-
-function missFace(){
-  G.shots++;
-  G.combo = 0;
-  G.lives--;
-  sfxThud();
-
-  gameEl.classList.remove('shaking');
-  void gameEl.offsetWidth;
-  gameEl.classList.add('shaking');
-  gameEl.classList.remove('flashbad');
-  void gameEl.offsetWidth;
-  gameEl.classList.add('flashbad');
-
-  G.speed = G.start;   // 未命中回退到开局起始速度
+function judgeMiss(i,rt,win,card){
+  G.answered=true; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT); clearTimeout(G.timer);
+  G.shots++; G.misses++; G.combo=0; G.lives--;
+  if(SFX)sfxThud(); vibe(40);
+  card.classList.add('wrong');
+  lockCards(true); showFeedback(false,rt,win);
   updateHUD();
-  G.lockUntil = performance.now() + 260;
+  setTimeout(nextAfter,820);
+}
+function onTimeout(){
+  if(!G.running||G.answered)return;
+  G.answered=true; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT);
+  G.shots++; G.timeouts++; G.combo=0; G.lives--;
+  if(SFX)sfxThud(); vibe(60);
+  lockCards(true); showFeedback(false,null,curLv().win);
+  updateHUD();
+  setTimeout(nextAfter,820);
+}
+function nextAfter(){ if(!G.running)return; if(G.lives<=0||G.round>=MAX_ROUNDS){gameOver();return;} startRound(); }
 
-  if (G.lives <= 0){
-    setTimeout(gameOver, 480);
-    G.running = false;
-    clearTimeout(G.timer);
-    stopCountdown();
-    return;
-  }
-  clearTimeout(G.timer);
-  G.timer = setTimeout(tick, G.base * 1.15);
-  startCountdown(G.base * 1.15);
-}
-
-function lianxiang(){
-  if (!G.running || G.paused) return;
-  const now = performance.now();
-  if (now < G.lockUntil) return;
-  if (G.face === G.cmd) hitFace();
-  else missFace();
-}
-
-/* ==================== 难度卡片渲染（点击即开局 · 不锁级） ==================== */
-function buildCard(d, idx){
-  const card = document.createElement('button');
-  card.type = 'button';
-  card.className = 'diff-card' + (idx === G.li ? ' sel' : '');
-  card.innerHTML =
-    (d.tag ? '<span class="tag">' + d.tag + '</span>' : '') +
-    '<b>' + d.key + '</b>' +
-    '<small>' + d.name + '</small>' +
-    '<span class="dmeta">' + d.faces + ' 脸谱<br>窗口 ' + d.win + '</span>';
-  card.addEventListener('pointerdown', function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    openLevel(idx);          // 点卡片进入该关卡就绪页，再点"开始游戏"开局
-  });
-  return card;
-}
-function openLevel(li){
-  G.li = li;
-  var D = DIFFS[li];
-  $('#lpKey').textContent = D.key;
-  $('#lpName').textContent = D.name + ' · ' + D.faces + ' 脸谱';
-  $('#lpMeta').innerHTML = '反应窗口 <b>' + D.win + '</b> · 脸谱跳转 <b>' + D.speed + 'ms</b>' +
-    (D.start !== D.speed ? '<br><span style="font-size:11px;color:rgba(242,230,207,.55)">开局从 ' + D.start + 'ms 起步，随命中渐快</span>' : '');
-  $('#startPanel').classList.remove('show');
-  $('#difPanel').classList.remove('show');
-  $('#pauseVeil').classList.remove('show');
-  $('#levelPanel').classList.add('show');
-}
-function levelStart(){ startGame(G.li); }
-function levelBack(){
-  $('#levelPanel').classList.remove('show');
-  $('#startPanel').classList.add('show');
-  renderDiffCards();
-}
-function pauseGame(){
-  if (!G.running || G.paused) return;
-  G.paused = true;
-  clearTimeout(G.timer);
-  stopCountdown();
-  stopRoundTimer();
-  $('#pauseVeil').classList.add('show');
-  $('#ctrl').classList.add('veiled');
-}
-function resumeGame(){
-  if (!G.running || !G.paused) return;
-  G.paused = false;
-  $('#pauseVeil').classList.remove('show');
-  $('#ctrl').classList.remove('veiled');
-  var interval = G.speed * (0.86 + Math.random() * 0.28);
-  clearTimeout(G.timer);
-  G.timer = setTimeout(tick, interval);
-  startCountdown(interval);
-  resumeRoundTimer();
-}
-function abortMatch(){
-  G.paused = false;
-  $('#pauseVeil').classList.remove('show');
-  gameOver();
-}
-function goHome(){
-  G.running = false; G.paused = false;
-  clearTimeout(G.timer); stopCountdown(); stopRoundTimer();
-  $('#pauseVeil').classList.remove('show');
-  $('#ctrl').classList.add('hide');
-  $('#liang').disabled = true;
-  $('#levelPanel').classList.remove('show');
-  $('#endPanel').classList.remove('show');
-  renderDiffCards();
-  $('#startPanel').classList.add('show');
-}
-
-function renderDiffCards(){
-  const c1 = $('#diffCards'), c2 = $('#diffCardsPanel');
-  c1.innerHTML = ''; c2.innerHTML = '';
-  DIFFS.forEach(function(d, i){
-    c1.appendChild(buildCard(d, i));
-    c2.appendChild(buildCard(d, i));
-  });
-}
-
-/* ==================== 开始 / 结束 ==================== */
-function startGame(li){
-  li = (li == null) ? G.li : li;
-  G.li = li;
+/* ============ 八、开始 / 结算 / 首页 ============ */
+function startGame(lv){
   acInit();
-  G.running = true;
-  G.paused = false;
-  G.score = 0; G.combo = 0; G.best = 0; G.lives = LIVES;
-  G.hits = 0; G.shots = 0;
-  var D = DIFFS[li];
-  G.base = D.speed;              // 该难度的最终（目标）跳转间隔
-  G.start = D.start || D.speed;  // 开局起始间隔
-  G.speed = G.start;             // L4/L5 从较慢起步、随命中温和提速；其余难度起始即达标
-  const p = pool();
-  G.face = Math.floor(Math.random() * p.length);
-  G.lastCmd = -1;
-  G.lockUntil = performance.now() + 300;
-
-  updateHUD();
-  elScore.textContent = '0';
-  elCombo.textContent = '0';
-  elDiff.textContent = DIFFS[li].key;
-  renderFace(G.face, true);
-  newCommand();
-
-  $('#liang').disabled = false;
-  $('#startPanel').classList.remove('show');
-  $('#difPanel').classList.remove('show');
-  $('#endPanel').classList.remove('show');
-  $('#levelPanel').classList.remove('show');
-  $('#pauseVeil').classList.remove('show');
-  $('#ctrl').classList.remove('hide');
-
-  renderDiffCards();
-
-  clearTimeout(G.timer);
-  G.timer = setTimeout(tick, 1100);
-  startCountdown(1100);
-  startRoundTimer();
+  G.running=true; G.lv=lv||recommend()||1;
+  G.round=0;G.lives=5;G.hits=0;G.misses=0;G.timeouts=0;G.shots=0;G.combo=0;G.bestCombo=0;G.score=0;G.RTs=[];G.colorHits=[];G.cheatDetected=false;
+  updateHUD(); showPanel('game'); startRound();
+  const t=today(),d=lsGet('today',{date:'',n:0}); if(d.date!==t){d.date=t;d.n=0;} d.n++; lsSet('today',d);
+  $('#todayCount').textContent=d.n;
 }
-
-const RANKS = [
-  { min:3600, name:'变脸宗师', poem:'一甩头，千般面目；一抬手，万种风情。' },
-  { min:2400, name:'川剧名角', poem:'台上一分钟，台下十年功。' },
-  { min:1400, name:'跟斗小生', poem:'身段已稳，可上台面。' },
-  { min:600,  name:'梨园学徒', poem:'眼要快，手要稳，再来一遍。' },
-  { min:0,    name:'初入梨园', poem:'别急，先看清那张脸。' }
-];
-
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function gameOver(){
-  G.running = false; G.paused = false;
-  clearTimeout(G.timer);
-  stopCountdown();
-  stopRoundTimer();
-  $('#liang').disabled = true;
-  $('#ctrl').classList.add('hide');
-
-  const acc = G.shots ? Math.round(G.hits / G.shots * 100) : 0;
-  let rank = RANKS[RANKS.length - 1];
-  for (let i = 0; i < RANKS.length; i++){
-    if (G.score >= RANKS[i].min){ rank = RANKS[i]; break; }
-  }
-
-  $('#rankName').textContent = rank.name + ' · ' + DIFFS[G.li].key;
-  $('#rankPoem').textContent = rank.poem;
-  $('#finalScore').textContent = G.score;
-  $('#finalCombo').textContent = G.best;
-  $('#finalAcc').textContent = acc + '%';
-  $('#finalHits').textContent = G.hits;
-
-  let bestScore = 0;
-  try { bestScore = parseInt(localStorage.getItem('bianlian_best') || '0', 10) || 0; } catch(e){}
-  const tip = $('#bestTip');
-  if (G.score > bestScore){
-    try { localStorage.setItem('bianlian_best', String(G.score)); } catch(e){}
-    tip.textContent = '★ 新纪录 · 破了旧日头面';
-    tip.style.color = 'var(--gold-2)';
-  } else {
-    tip.textContent = '最高分 ' + bestScore;
-    tip.style.color = 'rgba(232,196,106,.5)';
-  }
-
-  $('#endPanel').classList.add('show');
+  G.running=false; cancelAnimationFrame(G.winRAF); clearInterval(G.swishT); clearTimeout(G.timer);
+  const n=Math.max(1,G.shots), acc=Math.round(G.hits/n*100);
+  const avgRT=G.RTs.length?Math.round(G.RTs.reduce((a,b)=>a+b)/G.RTs.length):0;
+  const sorted=[...G.RTs].sort((a,b)=>a-b);
+  const med=sorted.length?Math.round((sorted.length%2?sorted[(sorted.length/2)|0]:(sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)):0;
+  const fast=G.RTs.length?Math.min(...G.RTs):0;
+  const sd=G.RTs.length<2?0:Math.round(Math.sqrt(G.RTs.reduce((a,b)=>a+Math.pow(b-avgRT,2),0)/G.RTs.length));
+  $('#finalScore').textContent=G.score;
+  const rank=rankFor(acc,fast); $('#rankName').textContent=rank.name; $('#rankPoem').textContent=rank.poem;
+  $('#finalStats').innerHTML=
+    `<div class="stat"><span>正确率</span><b>${acc}%</b></div><div class="stat"><span>平均RT</span><b>${avgRT}ms</b></div>
+     <div class="stat"><span>最快RT</span><b>${fast}ms</b></div><div class="stat"><span>中位RT</span><b>${med}ms</b></div>
+     <div class="stat"><span>稳定σ</span><b>${sd}ms</b></div><div class="stat"><span>超时/错</span><b>${Math.round(G.timeouts/n*100)}/${Math.round(G.misses/n*100)}%</b></div>`;
+  const old=getBest(G.lv), rec={acc:Math.max(old.acc,acc),avgRT:avgRT?Math.min(old.avgRT,avgRT):old.avgRT,
+    combo:Math.max(old.combo,G.bestCombo),best:Math.max(old.best,G.score)}; saveBest(G.lv,rec);
+  // 换级建议
+  const sug=suggestLv(avgRT,acc);
+  $('#suggestBox').innerHTML = (sug&&sug!==G.lv
+    ? `✨ 本局表现更适合 <b>L${sug} ${levelOf(sug).name}</b><small>（${levelOf(sug).count}脸谱 · 窗口 ${ms(levelOf(sug).win)}）</small>`
+    : (acc>=80?`✨ 表现很稳，可尝试 <b>L${Math.min(5,G.lv+1)} ${levelOf(Math.min(5,G.lv+1)).name}</b> 挑战更高<small>（当前等级表现良好）</small>`:'🔧 再练当前等级，熟记造型更稳'))
+    + (G.cheatDetected?'<small>⚠ 检测到记颜色倾向 · 已增强颜色随机性</small>':'');
+  showPanel('end');
+}
+function rankFor(acc,fast){
+  if(acc>=90&&fast<900)return{name:'变脸宗师',poem:'一甩头千般面目，一抬手万种风情。'};
+  if(acc>=80&&fast<1400)return{name:'川剧名角',poem:'台上一分钟，台下十年功。'};
+  if(acc>=70)return{name:'跟斗小生',poem:'身段已稳，可上台面。'};
+  if(acc>=55)return{name:'梨园学徒',poem:'眼要快，手要稳，再来一遍。'};
+  return{name:'初入梨园',poem:'别急，先看清那张脸。'};
+}
+function suggestLv(avgRT,acc){
+  // 推荐平均RT能"舒适命中"的最高等级（约窗口60%以内）
+  if(avgRT<=0)return null;
+  let best=0;
+  for(const L of LEVELS){ if(acc>=55 && avgRT<=L.win*0.75) best=L.level; } // 能hold住且仍有余地
+  return best|| (acc>=80?1:null);
+}
+/* 首页推荐：依据已有记录选"有挑战且可达"的等级 */
+function recommend(){
+  let best=0,bestScore=0;
+  for(const L of LEVELS){const r=getBest(L.level); if(r.acc>=60&&r.acc<90&&r.best>bestScore){bestScore=r.best;best=L.level;}}
+  return best?best:2;
+}
+function overallBestRT(){let b=Infinity;for(let lv=1;lv<=5;lv++){const r=getBest(lv);if(r.avgRT&&r.avgRT<b)b=r.avgRT;}return (isFinite(b)&&b<9999)?b+'ms':'—';}
+function renderHome(){
+  $('#bestRT').textContent=overallBestRT();
+  $('#bestScore').textContent=lsGet('bestScore',0);
+  const t=lsGet('today',{date:'',n:0}),td=today(); $('#todayCount').textContent=(t.date===td)?t.n:0;
+  renderLvlList();
+}
+function renderLvlList(){
+  const rec=recommend(); const wrap=$('#lvlList'); let html='';
+  for(const L of LEVELS){const r=getBest(L.level);
+    html+=`<div class="lvl-card ${L.level===rec?'is-rec':''} ${L.level===(lsGet('curLv',1))?'cur':''}" data-lv="${L.level}">
+      ${L.level===rec?'<span class="rec-tag">推荐</span>':''}
+      <div class="lvl-num">L${L.level}</div>
+      <div class="lvl-info"><div class="nm">${L.name}<b>${L.count}脸谱</b></div>
+        <div class="meta">反应窗口 <i>${ms(L.win)}</i></div></div>
+      <div class="lvl-best"><span>最佳反应</span><b>${r.avgRT<9999?r.avgRT+'ms':'—'}</b></div></div>`;}
+  wrap.innerHTML=html;
+  wrap.querySelectorAll('.lvl-card').forEach(c=>c.addEventListener('click',()=>{
+    const lv=parseInt(c.dataset.lv,10); lsSet('curLv',lv); startGame(lv);
+  }));
 }
 
-function openDiff(){
-  renderDiffCards();
-  $('#difPanel').classList.add('show');
+/* ============ 九、面板 ============ */
+function showGame(){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));$('#gameShell').style.visibility='visible';}
+function showPanel(p){
+  if(p==='game'){showGame();return;}
+  $('#gameShell').style.visibility='hidden';
+  document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('show',x.id===p+'Panel'));
 }
-function closeDiff(){
-  $('#difPanel').classList.remove('show');
+function renderSwitchList(){
+  const wrap=$('#switchList'); let html='';
+  for(const L of LEVELS){const r=getBest(L.level);
+    html+=`<div class="switch-item ${L.level===G.lv?'cur':''}" data-lv="${L.level}">
+      <span class="nm">L${L.level} ${L.name}</span><span class="meta">${L.count}脸谱 · ${ms(L.win)}</span></div>`;}
+  wrap.innerHTML=html;
+  wrap.querySelectorAll('.switch-item').forEach(x=>x.addEventListener('click',()=>{
+    const lv=parseInt(x.dataset.lv,10); G.lv=lv; lsSet('curLv',lv);
+    showPanel('game'); startGame(lv);
+  }));
 }
 
-/* ==================== 输入 ==================== */
-$('#liang').addEventListener('pointerdown', function(e){
-  e.preventDefault();
-  lianxiang();
-});
-document.addEventListener('keydown', function(e){
-  if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter'){
-    e.preventDefault();
-    if (G.running && !G.paused) lianxiang();
-    else if ($('#difPanel').classList.contains('show')) closeDiff();
-    else if ($('#startPanel').classList.contains('show')) startGame(G.li);
-    else if ($('#endPanel').classList.contains('show')) startGame(G.li);
-  }
-});
-$('#btnStart').addEventListener('click', function(){ startGame(G.li); });
-$('#btnAgain').addEventListener('click', function(){ startGame(G.li); });
-$('#btnChange').addEventListener('click', openDiff);
-$('#diffHud').addEventListener('click', openDiff);
-$('#difPanel').addEventListener('click', function(e){
-  if (e.target === this) closeDiff();
-});
-$('#lpStart').addEventListener('click', levelStart);
-$('#lpBack').addEventListener('click', levelBack);
-$('#btnPause').addEventListener('click', pauseGame);
-$('#btnStop').addEventListener('click', abortMatch);
-$('#btnHome').addEventListener('click', goHome);
-$('#pvResume').addEventListener('click', resumeGame);
-$('#pvStop').addEventListener('click', abortMatch);
-$('#pvHome').addEventListener('click', goHome);
+/* ============ 设置 ============ */
+function applySettings(){const s=getSettings();SFX=s.snd;VIBE=s.vibe;
+  document.body.classList.toggle('colorblind',s.cb);
+  $('#setSound').checked=s.snd;$('#setCB').checked=s.cb;$('#setVibe').checked=s.vibe;}
+$('#setSound').addEventListener('change',e=>{const s=getSettings();s.snd=e.target.checked;setSettings(s);applySettings();});
+$('#setCB').addEventListener('change',e=>{const s=getSettings();s.cb=e.target.checked;setSettings(s);applySettings();});
+$('#setVibe').addEventListener('change',e=>{const s=getSettings();s.vibe=e.target.checked;setSettings(s);applySettings();});
 
-/* ==================== 启动 ==================== */
-window.addEventListener('resize', resize);
-resize();
-renderLives();
-renderFace(0, false);
-renderDiffCards();
-countRing.setAttribute('stroke-dasharray', String(RING_LEN));
+/* ============ 事件 ============ */
+$('#btnStart').addEventListener('click',()=>startGame(recommend()));
+$('#btnDiff').addEventListener('click',()=>{renderSwitchList();showPanel('switch');});
+$('#btnSwitchBack').addEventListener('click',()=>{G.running?showPanel('game'):showPanel('start');});
+$('#btnSet').addEventListener('click',()=>showPanel('settings'));
+$('#btnSetBack').addEventListener('click',()=>{G.running?showPanel('game'):showPanel('start');});
+$('#btnHome').addEventListener('click',()=>{if(G.running)gameOver();renderHome();showPanel('start');});
+$('#btnBack').addEventListener('click',()=>{renderHome();showPanel('start');});
+$('#btnAgain').addEventListener('click',()=>{renderSwitchList();showPanel('switch');});
+document.addEventListener('keydown',e=>{if(e.code==='Space'||e.key===' '||e.key==='Enter'){e.preventDefault();
+  const cur=document.querySelector('.panel.show'); if(!cur)return;
+  if(cur.id==='startPanel')startGame(recommend());}});
+
+/* ============ 启动 ============ */
+window.addEventListener('resize',resize);
+resize(); applySettings(); renderHome(); showPanel('start');
 requestAnimationFrame(loop);
 })();
 </script>
